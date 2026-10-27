@@ -19,9 +19,19 @@ export function ChatPanel({ firstName }: { firstName: string }) {
     try {
       const r = await fetch("/api/v1/chat", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ messages: history.map(({ role, content }) => ({ role, content })) }) });
       if (!r.ok || !r.body) { const e = await r.json().catch(() => ({})); setMsgs([...history, { role: "assistant", content: e.error ?? e.message ?? `Sorry, something went wrong (${r.status}).` }]); return; }
-      const reader = r.body.getReader(); const dec = new TextDecoder(); let acc = "";
-      for (;;) { const { done, value } = await reader.read(); if (done) break; acc += dec.decode(value, { stream: true }); setMsgs([...history, { role: "assistant", content: acc, pending: true }]); }
-      setMsgs([...history, { role: "assistant", content: acc.trim() || "Sorry, I have no answer for that." }]);
+      const reader = r.body.getReader(); const dec = new TextDecoder(); let acc = "", buf = "", err = "";
+      for (;;) {
+        const { done, value } = await reader.read(); if (done) break;
+        buf += dec.decode(value, { stream: true });
+        const lines = buf.split("\n"); buf = lines.pop() ?? "";
+        for (const line of lines) {
+          const t = line.trim(); if (!t.startsWith("data:")) continue;
+          const data = t.slice(5).trim(); if (data === "[DONE]") continue;
+          try { const j = JSON.parse(data); if (j.delta) acc += j.delta; if (j.error) err = j.error; } catch { acc += data; }
+        }
+        setMsgs([...history, { role: "assistant", content: acc, pending: true }]);
+      }
+      setMsgs([...history, { role: "assistant", content: acc.trim() || err || "Sorry, I have no answer for that." }]);
     } catch { setMsgs([...history, { role: "assistant", content: "Sorry, I could not reach the assistant. Please try again." }]); }
     finally { setBusy(false); }
   };

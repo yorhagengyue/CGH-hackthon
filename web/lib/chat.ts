@@ -55,6 +55,7 @@ Rules:
 - Explain the questionnaire in words (for example "slight problems walking"), not in index numbers.`;
 
 const REFER = /ask your physiotherapist/i;
+const sse = (obj: unknown) => `data: ${typeof obj === "string" ? obj : JSON.stringify(obj)}\n\n`;
 
 /** Stream a reply from DeepSeek and store the exchange. `onDone` gets the full assistant text. */
 export async function streamChat(patientId: number, author: { id: number; name: string; role: string }, history: ChatMsg[]): Promise<ReadableStream<Uint8Array>> {
@@ -65,13 +66,13 @@ export async function streamChat(patientId: number, author: { id: number; name: 
   const context = await patientContext(patientId, author);
   const key = process.env.DEEPSEEK_API_KEY;
   const enc = new TextEncoder();
-  if (!key) return new ReadableStream({ start(c) { c.enqueue(enc.encode("Ask is not configured on this server yet (missing DEEPSEEK_API_KEY).")); c.close(); } });
+  if (!key) return new ReadableStream({ start(c) { c.enqueue(enc.encode(sse({ error: "Ask is not configured on this server yet (missing DEEPSEEK_API_KEY)." }) + sse("[DONE]"))); c.close(); } });
   const res = await fetch("https://api.deepseek.com/chat/completions", {
     method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${key}` },
     body: JSON.stringify({ model: "deepseek-chat", temperature: 0.3, stream: true, max_tokens: 400,
       messages: [{ role: "system", content: `${SYSTEM_RULES}\n\n=== PATIENT RECORD ===\n${context}` }, ...history.slice(-12).map((m) => ({ role: m.role, content: m.content.slice(0, 2000) }))] }),
   });
-  if (!res.ok || !res.body) { const t = await res.text().catch(() => ""); return new ReadableStream({ start(c) { c.enqueue(enc.encode(`Sorry, Ask is unavailable right now (${res.status}). ${t.slice(0, 120)}`)); c.close(); } }); }
+  if (!res.ok || !res.body) { const t = await res.text().catch(() => ""); return new ReadableStream({ start(c) { c.enqueue(enc.encode(sse({ error: `Sorry, Ask is unavailable right now (${res.status}). ${t.slice(0, 120)}` }) + sse("[DONE]"))); c.close(); } }); }
   const reader = res.body.getReader(); const dec = new TextDecoder(); let buf = ""; let full = "";
   return new ReadableStream({
     async pull(c) {
@@ -79,14 +80,14 @@ export async function streamChat(patientId: number, author: { id: number; name: 
       if (done) {
         if (full.trim()) await q("INSERT INTO chat_messages(patient_id, author_id, role, content) VALUES ($1,NULL,'assistant',$2)", [patientId, full.trim()]);
         if (userMsgId && REFER.test(full)) await q("UPDATE chat_messages SET for_clinician = true WHERE id = $1", [userMsgId]);
-        c.close(); return;
+        c.enqueue(enc.encode(sse("[DONE]"))); c.close(); return;
       }
       buf += dec.decode(value, { stream: true });
       const parts = buf.split("\n"); buf = parts.pop() ?? "";
       for (const line of parts) {
         const t = line.trim(); if (!t.startsWith("data:")) continue;
         const data = t.slice(5).trim(); if (data === "[DONE]") continue;
-        try { const delta = JSON.parse(data).choices?.[0]?.delta?.content; if (delta) { full += delta; c.enqueue(enc.encode(delta)); } } catch { /* partial line */ }
+        try { const delta = JSON.parse(data).choices?.[0]?.delta?.content; if (delta) { full += delta; c.enqueue(enc.encode(sse({ delta }))); } } catch { /* partial line */ }
       }
     },
     cancel() { reader.cancel().catch(() => undefined); },
