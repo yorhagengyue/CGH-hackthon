@@ -31,16 +31,73 @@ export async function notifyApp(q: Q, userId: number, kind: string, message: str
   await q(`INSERT INTO notifications(user_id, appointment_id, channel, kind, message, send_at, sent_at) VALUES ($1,$2,'app',$3,$4,now(),now())`, [userId, appointmentId, kind, message]);
 }
 
-export async function dispatchDue(q: Q): Promise<number> {
-  const due = await q(`SELECT n.id, n.message, u.phone FROM notifications n JOIN users u ON u.id = n.user_id WHERE n.channel='sms' AND n.sent_at IS NULL AND n.send_at <= now()`);
-  for (const d of due) {
-    if (process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN && process.env.TWILIO_FROM && d.phone) {
-      const body = new URLSearchParams({ To: String(d.phone), From: process.env.TWILIO_FROM, Body: String(d.message) });
-      await fetch(`https://api.twilio.com/2010-04-01/Accounts/${process.env.TWILIO_ACCOUNT_SID}/Messages.json`, {
-        method: "POST", headers: { Authorization: "Basic " + Buffer.from(`${process.env.TWILIO_ACCOUNT_SID}:${process.env.TWILIO_AUTH_TOKEN}`).toString("base64"), "Content-Type": "application/x-www-form-urlencoded" }, body,
-      }).catch(() => undefined);
-    }
-    await q("UPDATE notifications SET sent_at = now() WHERE id = $1", [d.id]);
+export interface DispatchSummary {
+  processed: number;
+  sent: number;
+  simulated: number;
+  failed: number;
+}
+
+interface TwilioConfig {
+  accountSid: string;
+  authToken: string;
+  from: string;
+}
+
+async function sendWithTwilio(config: TwilioConfig, to: string, message: string) {
+  const { accountSid, authToken, from } = config;
+  const body = new URLSearchParams({ To: to, From: from, Body: message });
+  const response = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`, {
+    method: "POST",
+    headers: {
+      Authorization: `Basic ${Buffer.from(`${accountSid}:${authToken}`).toString("base64")}`,
+      "Content-Type": "application/x-www-form-urlencoded",
+    },
+    body,
+    signal: AbortSignal.timeout(15_000),
+  });
+
+  if (!response.ok) {
+    console.error(`Twilio rejected SMS with HTTP ${response.status}.`);
+    throw new Error(`Twilio rejected the SMS (HTTP ${response.status}).`);
   }
-  return due.length;
+}
+
+export async function dispatchDue(q: Q): Promise<DispatchSummary> {
+  const accountSid = process.env.TWILIO_ACCOUNT_SID;
+  const authToken = process.env.TWILIO_AUTH_TOKEN;
+  const from = process.env.TWILIO_FROM;
+  const hasAnyTwilioConfig = Boolean(accountSid || authToken || from);
+  if (hasAnyTwilioConfig && (!accountSid || !authToken || !from)) {
+    throw new Error("Configure TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, and TWILIO_FROM together.");
+  }
+  const config = accountSid && authToken && from ? { accountSid, authToken, from } : null;
+  const due = await q(`SELECT n.id, n.message, u.phone FROM notifications n JOIN users u ON u.id = n.user_id WHERE n.channel='sms' AND n.sent_at IS NULL AND n.send_at <= now()`);
+  const summary: DispatchSummary = { processed: due.length, sent: 0, simulated: 0, failed: 0 };
+
+  for (const d of due) {
+    if (!d.phone) {
+      console.error(`SMS notification ${String(d.id)} has no recipient phone number.`);
+      summary.failed += 1;
+      continue;
+    }
+
+    try {
+      if (config) {
+        await sendWithTwilio(config, String(d.phone), String(d.message));
+      }
+
+      await q("UPDATE notifications SET sent_at = now() WHERE id = $1", [d.id]);
+      if (config) {
+        summary.sent += 1;
+      } else {
+        summary.simulated += 1;
+      }
+    } catch (error) {
+      summary.failed += 1;
+      console.error(`Could not process SMS notification ${String(d.id)}:`, error);
+    }
+  }
+
+  return summary;
 }
