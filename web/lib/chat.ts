@@ -36,11 +36,11 @@ export async function patientContext(patientId: number, askedBy: { name: string;
     const v = verdict(s, prev);
     lines.push(`- ${fmt(s.submitted_at)}, filled in by ${s.filled_by_name}. ${VERDICT_TEXT[v].title.replace("You are", "Patient is")}.`);
     for (const d of DIMS as readonly Dim[]) lines.push(`    ${DIM_SHORT[d]}: "${QUESTIONS[d].opts[s[d] - 1]}" (level ${s[d]} of 5)`);
-    lines.push(`    Pain ${s.pain} out of 10. Overall health ${s.eq_vas} out of 100.${s.flagged ? ` Flagged for the clinician: ${s.flag_reason}.` : ""}`);
+    lines.push(`    Pain ${s.pain} out of 10. Overall health score ${Math.round(s.index_value * 100)} out of 100 (from the five answers).${s.flagged ? ` Flagged for the clinician: ${s.flag_reason}.` : ""}`);
   });
   if (!b.surveys.length) lines.push("- none yet");
   const cur = b.surveys.at(-1) ?? null, prev = b.surveys.at(-2) ?? null;
-  if (cur && prev) { const f = flagsFor(cur, prev); lines.push("", `Change since the previous questionnaire: pain ${f.pain || "n/a"}, overall health ${f.vas || "n/a"}, EQ-5D index ${f.index || "n/a"}.`); }
+  if (cur && prev) { const f = flagsFor(cur, prev); lines.push("", `Change since the previous questionnaire: pain ${f.pain || "n/a"}, overall health score ${f.index || "n/a"}.`); }
   lines.push("", "Family members who may help:", ...(fam.length ? fam.map((m) => `- ${m.name}, ${m.relationship}, ${m.status === "accepted" ? "approved" : "waiting for approval"}`) : ["- none"]));
   lines.push("", "Unread notifications:", ...(unread.length ? unread.map((n) => `- ${fmt(n.send_at)}: ${n.message}`) : ["- none"]));
   return lines.join("\n");

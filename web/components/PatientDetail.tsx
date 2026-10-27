@@ -28,22 +28,22 @@ export async function PatientDetail({ patientId, staff = false, self = false }: 
         {cur ? (() => { const v = verdict(cur, prev); const t = VERDICT_TEXT[v]; return <>
           {cur.flagged && <div className="mb-3 rounded-xl bg-danger-bg border border-danger/30 px-4 py-3"><div className="font-bold text-danger">Needs attention</div><div className="text-sm text-danger/90">Latest questionnaire ({fmtD(cur.submitted_at)}): {cur.flag_reason}</div></div>}
           <div className="mb-3"><Pill tone={t.tone}>{v === "first" ? "First questionnaire" : v === "better" ? "Improved since last visit" : v === "same" ? "Stable since last visit" : "Worse since last visit"}</Pill> <span className="text-xs text-slate-500 ml-2">submitted {fmtDT(cur.submitted_at)} by {cur.filled_by_name}</span></div>
-          <div className="mb-4"><ProgressTrend clinical points={surveys.map((s) => ({ id: s.id, date: fmtD(s.submitted_at), label: dLabel(s.submitted_at), mo: s.mo, sc: s.sc, ua: s.ua, pd: s.pd, ad: s.ad, pain: s.pain, health: s.eq_vas, filled_by: s.filled_by_name }))} /></div>
+          <div className="mb-4"><ProgressTrend clinical points={surveys.map((s) => ({ id: s.id, date: fmtD(s.submitted_at), label: dLabel(s.submitted_at), mo: s.mo, sc: s.sc, ua: s.ua, pd: s.pd, ad: s.ad, pain: s.pain, health: Math.round(s.index_value * 100), vas: s.eq_vas, filled_by: s.filled_by_name }))} /></div>
           <table className="tbl mb-3"><thead><tr><th>Dimension</th><th>Now · {fmtD(cur.submitted_at)}</th><th>{prev ? <>Last · {fmtD(prev.submitted_at)}</> : "Last"}</th></tr></thead><tbody>
             {DIMS.map((d) => <tr key={d}><td>{DIM_LABEL[d]}</td><td><span className={`inline-block w-6 text-center rounded font-bold ${LV_BG[cur[d]]}`}>{cur[d]}</span> <span className="text-slate-500">{LEVEL_LABEL[cur[d]]}</span></td><td>{prev ? <><span className={`inline-block w-6 text-center rounded font-bold ${LV_BG[prev[d]]}`}>{prev[d]}</span> <span className="text-slate-500">{LEVEL_LABEL[prev[d]]}</span></> : "—"}</td></tr>)}
           </tbody></table>
           <ul className="text-sm text-slate-700 space-y-1">
             <li><b>Pain {cur.pain}/10</b>{prev && <> · last {prev.pain}</>} <span className="text-slate-400">(NRS, lower is better{prev && fl.pain !== "stable" ? ", change is clinically meaningful" : ""})</span></li>
             <li><b>EQ-5D-5L index {cur.index_value.toFixed(2)}</b>{prev && <> · last {prev.index_value.toFixed(2)}</>} <span className="text-slate-400">(0–1, higher is better, {VALUE_SET}{prev && fl.index !== "stable" ? ", change is clinically meaningful" : ""})</span></li>
-            <li><b>EQ-VAS {cur.eq_vas}/100</b>{prev && <> · last {prev.eq_vas}</>} <span className="text-slate-400">(patient's own health rating, higher is better{prev && fl.vas !== "stable" ? ", change is clinically meaningful" : ""})</span></li>
+            {cur.eq_vas != null && <li><b>EQ-VAS {cur.eq_vas}/100</b>{prev?.eq_vas != null && <> · last {prev.eq_vas}</>} <span className="text-slate-400">(older record: patient's own health rating, no longer asked)</span></li>}
           </ul>
 
           {staff && <div className="mt-3 flex gap-2 items-start"><CopyButton text={clinicalNote(patient, referrals[0]?.diagnosis, cur, prev, first)} /><details className="text-xs"><summary className="cursor-pointer text-slate-500 py-1.5">preview note</summary><pre className="bg-cgh-ink text-slate-100 p-3 rounded-lg whitespace-pre-wrap">{clinicalNote(patient, referrals[0]?.diagnosis, cur, prev, first)}</pre></details></div>}
         </>; })() : <p className="text-slate-500 text-sm">No questionnaire submitted yet.</p>}
       </Card>
       <details><summary className="cursor-pointer text-cgh-blue font-bold text-sm mb-2">All questionnaires ({surveys.length})</summary><Card title="All questionnaires" tight>
-        <table className="tbl"><thead><tr><th>Submitted</th><th>Profile</th><th>Index</th><th>EQ-VAS</th><th>Pain</th><th>Filled by</th></tr></thead><tbody>
-          {[...surveys].reverse().map((s) => <tr key={s.id} ><td>{fmtDT(s.submitted_at)}</td><td><ProfileBadge s={levels(s)} /></td><td>{s.index_value.toFixed(3)}</td><td>{s.eq_vas}</td><td>{s.pain}/10</td><td className="text-slate-500">{s.filled_by_name}</td></tr>)}
+        <table className="tbl"><thead><tr><th>Submitted</th><th>Profile</th><th>Index</th><th>Pain</th><th>Filled by</th></tr></thead><tbody>
+          {[...surveys].reverse().map((s) => <tr key={s.id} ><td>{fmtDT(s.submitted_at)}</td><td><ProfileBadge s={levels(s)} /></td><td>{s.index_value.toFixed(3)}</td><td>{s.pain}/10</td><td className="text-slate-500">{s.filled_by_name}</td></tr>)}
           {surveys.length === 0 && <tr><td colSpan={6} className="text-slate-400 py-2">None yet</td></tr>}
         </tbody></table>
       </Card></details>

@@ -6,7 +6,6 @@ import { ActionForm } from "@/components/Form";
 import { fmtDT } from "@/components/ui";
 import { SurveyProgress } from "@/components/SurveyProgress";
 import { submitSurveyAction } from "../actions";
-import { VasSlider } from "./VasSlider";
 
 export default async function SurveyPage({ searchParams }: { searchParams: Promise<{ appt?: string }> }) {
   const s = await session(); if (!s) redirect("/login?next=/survey");
@@ -19,13 +18,12 @@ export default async function SurveyPage({ searchParams }: { searchParams: Promi
   const opt = "flex items-center gap-3 min-h-12 rounded-xl border border-slate-200 px-4 py-3 cursor-pointer text-[15px] transition has-[:checked]:border-cgh-blue has-[:checked]:bg-cgh-blue has-[:checked]:text-white";
   return <div className="max-w-lg mx-auto">
     <h1 className="text-[28px] leading-tight">Before your physiotherapy visit</h1>
-    <p className="text-slate-600 mt-2 mb-3">{s.user.role === "caregiver" ? `Answering on behalf of ${a?.name ?? "your parent"}. ` : ""}{a ? `For the appointment on ${fmtDT(a.scheduled_at)}. ` : ""}Seven short questions. Think about <b>today</b>.</p>
+    <p className="text-slate-600 mt-2 mb-3">{s.user.role === "caregiver" ? `Answering on behalf of ${a?.name ?? "your parent"}. ` : ""}{a ? `For the appointment on ${fmtDT(a.scheduled_at)}. ` : ""}Six short questions. Think about <b>today</b>.</p>
     <ActionForm action={submitSurveyAction} submit="Send to my physiotherapist" stickySubmit>
       <SurveyProgress />
       {appt && <input type="hidden" name="appt" value={appt} />}
-      {DIMS.map((d, i) => <fieldset key={d} className="bg-white rounded-2xl shadow-card p-5"><legend className="sr-only">{QUESTIONS[d].q}</legend><div className="text-[11px] font-bold uppercase tracking-wide text-cgh-blue">Question {i + 1} of 7</div><div className="font-bold text-lg mt-1 mb-3">{QUESTIONS[d].q}</div><div className="space-y-2">{QUESTIONS[d].opts.map((o, j) => <label key={j} className={opt}><input type="radio" name={d} value={j + 1} required className="accent-white w-4 h-4" />{o}</label>)}</div></fieldset>)}
-      <fieldset className="bg-white rounded-2xl shadow-card p-5"><div className="text-[11px] font-bold uppercase tracking-wide text-cgh-blue">Question 6 of 7</div><div className="font-bold text-lg mt-1">Your pain today</div><p className="text-xs text-slate-500 mb-3">0 means no pain, 10 means the worst pain imaginable</p><div className="grid grid-cols-11 gap-1">{Array.from({ length: 11 }, (_, i) => <label key={i} className="text-center min-h-12 leading-12 rounded-lg border border-slate-200 font-bold cursor-pointer transition has-[:checked]:bg-cgh-blue has-[:checked]:text-white has-[:checked]:border-cgh-blue"><input type="radio" name="pain" value={i} required className="hidden" />{i}</label>)}</div><div className="flex justify-between text-[11px] text-slate-400 mt-1"><span>No pain</span><span>Worst pain</span></div></fieldset>
-      <fieldset className="bg-white rounded-2xl shadow-card p-5"><div className="text-[11px] font-bold uppercase tracking-wide text-cgh-blue">Question 7 of 7</div><div className="font-bold text-lg mt-1">Your health today</div><p className="text-xs text-slate-500">0 is the worst health you can imagine, 100 the best</p><VasSlider /></fieldset>
+      {DIMS.map((d, i) => <fieldset key={d} className="bg-white rounded-2xl shadow-card p-5"><legend className="sr-only">{QUESTIONS[d].q}</legend><div className="text-[11px] font-bold uppercase tracking-wide text-cgh-blue">Question {i + 1} of 6</div><div className="font-bold text-lg mt-1 mb-3">{QUESTIONS[d].q}</div><div className="space-y-2">{QUESTIONS[d].opts.map((o, j) => <label key={j} className={opt}><input type="radio" name={d} value={j + 1} required className="accent-white w-4 h-4" />{o}</label>)}</div></fieldset>)}
+      <fieldset className="bg-white rounded-2xl shadow-card p-5"><div className="text-[11px] font-bold uppercase tracking-wide text-cgh-blue">Question 6 of 6</div><div className="font-bold text-lg mt-1">Your pain today</div><p className="text-xs text-slate-500 mb-3">0 means no pain, 10 means the worst pain imaginable</p><div className="grid grid-cols-11 gap-1">{Array.from({ length: 11 }, (_, i) => <label key={i} className="text-center min-h-12 leading-12 rounded-lg border border-slate-200 font-bold cursor-pointer transition has-[:checked]:bg-cgh-blue has-[:checked]:text-white has-[:checked]:border-cgh-blue"><input type="radio" name="pain" value={i} required className="hidden" />{i}</label>)}</div><div className="flex justify-between text-[11px] text-slate-400 mt-1"><span>No pain</span><span>Worst pain</span></div></fieldset>
     </ActionForm>
   </div>;
 }

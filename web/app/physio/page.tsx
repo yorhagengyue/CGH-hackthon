@@ -30,8 +30,8 @@ export default async function Physio({ searchParams }: { searchParams: Promise<R
     <Card tight title={`Clinic list · ${fmtD(date)}`} right={<form className="inline"><input type="date" name="day" defaultValue={date.toLocaleDateString("en-CA", { timeZone: "Asia/Singapore" })} className="border border-slate-300 rounded px-1 text-xs" /></form>}>
       <table className="tbl"><thead><tr><th>Time</th><th>Patient</th><th>Since last visit</th><th></th></tr></thead><tbody>
         {list.map((r) => { const v = r.cur ? verdict(r.cur, r.prev) : null; const t = v ? VERDICT_TEXT[v] : null; const why: string[] = [];
-          if (r.cur && r.prev) { if (r.cur.pain !== r.prev.pain) why.push(`pain ${r.prev.pain}→${r.cur.pain}`); for (const d of DIMS) if (r.cur[d] !== r.prev[d]) why.push(`${DIM_LABEL[d].toLowerCase()} ${r.prev[d]}→${r.cur[d]}`); if (r.cur.eq_vas !== r.prev.eq_vas) why.push(`health ${r.prev.eq_vas}→${r.cur.eq_vas}`); if (!why.length) why.push("all answers the same"); }
-          else if (r.cur) why.push(`pain ${r.cur.pain}/10`, `health ${r.cur.eq_vas}/100`);
+          if (r.cur && r.prev) { if (r.cur.pain !== r.prev.pain) why.push(`pain ${r.prev.pain}→${r.cur.pain}`); for (const d of DIMS) if (r.cur[d] !== r.prev[d]) why.push(`${DIM_LABEL[d].toLowerCase()} ${r.prev[d]}→${r.cur[d]}`); if (!why.length) why.push("all answers the same"); }
+          else if (r.cur) why.push(`pain ${r.cur.pain}/10`, `overall score ${Math.round(r.cur.index_value * 100)}/100`);
           const flagged = !!r.cur?.flagged;
           return <tr key={r.appt_id} className={flagged ? "shadow-[inset_3px_0_0_0_#b91c1c]" : ""}><td className="font-bold tabular-nums whitespace-nowrap text-base">{fmtT(r.scheduled_at)}</td>
             <td className="text-base"><a href={`/patients/${r.patient_id}`} className="font-bold text-cgh-blue hover:underline">{r.name}</a></td>

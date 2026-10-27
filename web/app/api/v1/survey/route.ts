@@ -11,8 +11,8 @@ export async function POST(req: Request) {
   const b = await body<Body>(req);
   const lv = {} as Record<Dim, number>;
   for (const d of ["mo", "sc", "ua", "pd", "ad"] as Dim[]) { lv[d] = Number(b[d]); if (!(lv[d] >= 1 && lv[d] <= 5)) return error("Please answer every question."); }
-  const vas = Number(b.eq_vas), pain = Number(b.pain);
-  if (!(vas >= 0 && vas <= 100)) return error("Please rate your health today.");
+  const vas = b.eq_vas != null && !isNaN(Number(b.eq_vas)) ? Number(b.eq_vas) : null;   // optional since the EQ-VAS page was removed
+  const pain = Number(b.pain);
   if (!(pain >= 0 && pain <= 10)) return error("Please rate your pain.");
   const apptId = Number(b.appt) || null;
   const q = await db();

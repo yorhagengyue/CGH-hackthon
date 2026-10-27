@@ -2,7 +2,7 @@ import "server-only";
 import { db, one } from "./db";
 import { DIMS, DIM_LABEL, LEVEL_LABEL, VALUE_SET, flag, type Dim } from "./eq5d";
 
-export type Survey = { id: number; appointment_id: number | null; mo: number; sc: number; ua: number; pd: number; ad: number; eq_vas: number; pain: number; index_value: number; submitted_at: string; filled_by_name: string; flagged?: boolean; flag_reason?: string | null };
+export type Survey = { id: number; appointment_id: number | null; mo: number; sc: number; ua: number; pd: number; ad: number; eq_vas: number | null; pain: number; index_value: number; submitted_at: string; filled_by_name: string; flagged?: boolean; flag_reason?: string | null };
 export type Appt = { id: number; referral_id: number; scheduled_at: string; kind: string; status: string; physio_name: string | null; survey_id: number | null };
 export type Referral = { id: number; diagnosis: string; region: string; notes: string | null; status: string; created_at: string; doctor_name: string; physio_id: number | null; physio_name: string | null; surgery_date: string | null };
 
@@ -24,7 +24,7 @@ export const levels = (s: Survey): Record<Dim, number> => ({ mo: s.mo, sc: s.sc,
 export const profileStr = (s: Survey) => DIMS.map((d) => s[d]).join("");
 
 export function clinicalNote(p: { name: string; login_id: string; gender: string | null; birthday: string | null }, dx: string | undefined, cur: Survey, prev: Survey | null, first: Survey | null) {
-  const d = (a: Survey, b: Survey) => `index ${(a.index_value - b.index_value) >= 0 ? "+" : ""}${(a.index_value - b.index_value).toFixed(3)}, EQ-VAS ${a.eq_vas - b.eq_vas >= 0 ? "+" : ""}${a.eq_vas - b.eq_vas}, pain ${a.pain - b.pain >= 0 ? "+" : ""}${a.pain - b.pain}`;
+  const d = (a: Survey, b: Survey) => `index ${(a.index_value - b.index_value) >= 0 ? "+" : ""}${(a.index_value - b.index_value).toFixed(3)}${a.eq_vas != null && b.eq_vas != null ? `, EQ-VAS ${a.eq_vas - b.eq_vas >= 0 ? "+" : ""}${a.eq_vas - b.eq_vas}` : ""}, pain ${a.pain - b.pain >= 0 ? "+" : ""}${a.pain - b.pain}`;
   const when = new Date(cur.submitted_at).toLocaleString("en-SG", { timeZone: "Asia/Singapore" });
   const lines = [
     `PATIENT-REPORTED OUTCOME MEASURES (EQ-5D-5L) – ${when}`,
@@ -33,7 +33,7 @@ export function clinicalNote(p: { name: string; login_id: string; gender: string
     ``,
     `EQ-5D-5L profile ${profileStr(cur)}   index ${cur.index_value.toFixed(3)} (${VALUE_SET} value set)`,
     ...DIMS.map((k) => `  ${DIM_LABEL[k].padEnd(22)} level ${cur[k]}  ${LEVEL_LABEL[cur[k]]}`),
-    `EQ-VAS (0-100)        ${cur.eq_vas}`,
+    ...(cur.eq_vas != null ? [`EQ-VAS (0-100)        ${cur.eq_vas}`] : []),
     `Pain NRS (0-10)       ${cur.pain}`,
   ];
   if (prev) lines.push(``, `Change since last PROM ${new Date(prev.submitted_at).toLocaleDateString("en-SG", { timeZone: "Asia/Singapore" })} (profile ${profileStr(prev)}): ${d(cur, prev)}`);

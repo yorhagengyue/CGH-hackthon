@@ -11,10 +11,10 @@ no manual transcription, and the data is there for longitudinal tracking and res
 
 - **Five roles, one account system.** Patient and caregiver (NRIC + password), doctor, physiotherapist and
   head of department (staff ID + password). The iOS app and the web app share the same accounts and database.
-- **EQ-5D-5L questionnaire** on the phone: five questions, pain 0–10, overall health 0–100. About two minutes.
+- **EQ-5D-5L questionnaire** on the phone: five questions plus pain 0–10, six in all. About two minutes. The overall health score (0–100) is computed from the five answers; the EQ-VAS page was removed after patient feedback.
   One submission per appointment; a caregiver can answer for a parent.
 - **Plain-language results for the patient.** One sentence ("You are doing better than last visit"), a trend chart
-  with the numbers on it (overall health, the five questions, pain; higher on the chart is always better), and a
+  with the numbers on it (overall health score, the five questions, pain; higher on the chart is always better), and a
   record browser to look back at every questionnaire. No index values, no arrows.
 - **Reminders only for a questionnaire that is still not done**: SMS 7 days, 1 day and 2 hours before the visit,
   to the patient and to approved caregivers. Nothing is sent once the questionnaire is in.
