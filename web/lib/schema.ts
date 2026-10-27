@@ -80,6 +80,15 @@ ALTER TABLE notifications ADD COLUMN IF NOT EXISTS link_id INT;
 ALTER TABLE referrals ADD COLUMN IF NOT EXISTS surgery_date DATE;
 ALTER TABLE surveys ADD COLUMN IF NOT EXISTS flagged BOOLEAN NOT NULL DEFAULT false;
 ALTER TABLE surveys ADD COLUMN IF NOT EXISTS flag_reason TEXT;
+CREATE TABLE IF NOT EXISTS chat_messages (           -- the patient's "Ask" conversation
+  id SERIAL PRIMARY KEY,
+  patient_id INT NOT NULL REFERENCES users(id),
+  author_id INT,                                     -- who typed it (patient or caregiver); NULL for the assistant
+  role TEXT NOT NULL,                                -- user | assistant
+  content TEXT NOT NULL,
+  for_clinician BOOLEAN NOT NULL DEFAULT false,      -- a question the assistant referred to the physiotherapist
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
 CREATE TABLE IF NOT EXISTS push_subscriptions (
   id SERIAL PRIMARY KEY,
   user_id INT NOT NULL REFERENCES users(id),

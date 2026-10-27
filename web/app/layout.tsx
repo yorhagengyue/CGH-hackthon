@@ -14,7 +14,7 @@ const manrope = Manrope({ subsets: ["latin"], variable: "--font-manrope", weight
 
 export const metadata: Metadata = { title: "CGH Physio PROMs", description: "Digital patient-reported outcomes for physiotherapy at Changi General Hospital" };
 const NAV: Record<string, [string, string][]> = {
-  patient: [["/patient", "Overview"], ["/patient?tab=survey", "Survey"], ["/patient?tab=progress", "Progress"], ["/patient?tab=calendar", "Calendar"], ["/patient?tab=notifications", "Notifications"], ["/patient?tab=profile", "Profile"]],
+  patient: [["/patient", "Overview"], ["/patient?tab=survey", "Survey"], ["/patient?tab=progress", "Progress"], ["/patient?tab=ask", "Ask"], ["/patient?tab=notifications", "Notifications"], ["/patient?tab=profile", "Profile"]],
   caregiver: [["/caregiver", "My parents"], ["/patient", "Parent's page"]],
   doctor: [["/doctor", "Patients & referrals"], ["/sms", "SMS outbox"]],
   physio: [["/physio", "My clinic"], ["/sms", "SMS outbox"]],

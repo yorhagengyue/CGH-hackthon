@@ -6,6 +6,7 @@ import { ActionForm, Field, inputCls } from "./Form";
 import { createAppointmentAction } from "@/app/actions";
 import { VERDICT_TEXT, verdict } from "@/lib/plain";
 import { ProgressTrend } from "./ProgressTrend";
+import { questionsForClinician } from "@/lib/chat";
 
 /** "359420013 : Osteoarthritis of knee" -> "359420013 · Osteoarthritis of knee" (staff see the code; patients never do) */
 const dxLine = (d: string) => d.replace(/^\s*(\d+)\s*:\s*/, "$1 · ");
@@ -16,6 +17,7 @@ export async function PatientDetail({ patientId, staff = false, self = false }: 
   const b = await patientBundle(patientId);
   if (!b) return <p>Patient not found.</p>;
   const { patient, referrals, appointments, surveys, caregivers } = b;
+  const asked = staff ? await questionsForClinician(patientId) : [];
   const cur = surveys.at(-1) ?? null, prev = surveys.at(-2) ?? null, first = surveys[0] ?? null;
   const fl = flagsFor(cur, prev);
   const upcoming = appointments.filter((a) => a.status === "scheduled" && new Date(a.scheduled_at) >= startOfTodaySG());
@@ -47,6 +49,7 @@ export async function PatientDetail({ patientId, staff = false, self = false }: 
       </Card></details>
     </div>
     <div className="space-y-4">
+      {staff && asked.length > 0 && <Card title="Questions noted from the patient's Ask" right={`${asked.length}`}>{asked.map((x) => <div key={x.id} className="text-sm py-1.5 border-b border-slate-100 last:border-0"><span className="text-xs text-slate-400 mr-2">{fmtD(x.created_at)}</span>{x.content}</div>)}</Card>}
       <Card title="Referrals">{referrals.map((r) => <div key={r.id} className="text-sm border-b border-slate-100 last:border-0 py-2"><div className="font-semibold">{dxLine(r.diagnosis)}</div><div className="text-slate-600">{r.region} · by {r.doctor_name} · {fmtD(r.created_at)}</div><div className="text-slate-600">Physio: {r.physio_name ?? <span className="text-warn">unassigned</span>} · <Pill ok={r.status === "active"}>{r.status}</Pill></div>{r.surgery_date ? <div className="text-sm font-semibold text-cgh-ink mt-1">Surgery {fmtD(r.surgery_date)} · {Math.floor((Date.now() - new Date(r.surgery_date).getTime()) / (30.44 * 86400000))} months post-op</div> : <div className="text-sm text-slate-500 mt-1">No surgery</div>}{r.notes && <div className="text-slate-500 text-xs mt-1">{r.notes}</div>}</div>)}{referrals.length === 0 && <p className="text-slate-400 text-sm">No referral yet.</p>}</Card>
       <Card title="Appointments">
         {appointments.length === 0 && <p className="text-slate-400 text-sm">None.</p>}
