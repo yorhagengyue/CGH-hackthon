@@ -41,7 +41,7 @@ export async function body<T = Record<string, unknown>>(req: Request): Promise<T
 export async function apiLogin(login_id: string, password: string): Promise<{ token: string; user: User } | null> {
   const u = await one<User & { password_hash: string }>(
     "SELECT id, role, login_id, name, phone, gender, birthday::text AS birthday, address, password_hash FROM users WHERE login_id = $1", [login_id.trim().toUpperCase()]);
-  if (!u || !checkPassword(password, u.password_hash)) return null;
+  if (!u || !checkPassword(password.trim(), u.password_hash)) return null;
   const q = await db();
   const token = randomBytes(24).toString("base64url");
   await q("INSERT INTO sessions(token, user_id) VALUES ($1, $2)", [token, u.id]);

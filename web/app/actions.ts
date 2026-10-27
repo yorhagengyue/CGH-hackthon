@@ -11,7 +11,7 @@ import { linkAccepted, requestLink, respondLink } from "@/lib/care";
 
 export async function loginAction(_: unknown, fd: FormData) {
   const u = await login(String(fd.get("login_id") ?? ""), String(fd.get("password") ?? ""));
-  if (!u) return { error: "Wrong NRIC / staff ID or password." };
+  if (!u) return { error: "Wrong NRIC / staff ID or password. Demo accounts use the password demo1234 (all lowercase)." };
   redirect(HOME[u.role]);
 }
 

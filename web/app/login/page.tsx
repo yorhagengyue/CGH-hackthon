@@ -14,8 +14,8 @@ export default function Login() {
       <h1 className="text-2xl">Log in</h1>
       <p className="text-sm text-slate-500 mt-1 mb-5">Patients and caregivers use their NRIC. Staff use their staff ID.</p>
       <ActionForm action={loginAction} submit="Log in" wide>
-        <Field label="NRIC or staff ID"><input name="login_id" className={`${inputCls} h-11`} placeholder="S1234567A" required autoFocus autoCapitalize="characters" /></Field>
-        <Field label="Password"><input name="password" type="password" className={`${inputCls} h-11`} required /></Field>
+        <Field label="NRIC or staff ID"><input name="login_id" className={`${inputCls} h-11`} placeholder="S1234567A" required autoFocus autoCapitalize="none" autoCorrect="off" spellCheck={false} /></Field>
+        <Field label="Password"><input name="password" type="password" className={`${inputCls} h-11`} required autoCapitalize="none" autoCorrect="off" spellCheck={false} /></Field>
       </ActionForm>
       <p className="text-sm text-slate-500 mt-5">New patient or caregiver? <a href="/register" className="text-cgh-blue font-semibold">Register</a></p>
     </div>
