@@ -32,6 +32,19 @@ npm run dev                     # http://localhost:3000
 First start creates the tables and seeds demo data (the CGH referral extract + synthetic
 identities and EQ-5D history). Demo accounts are listed on the landing page, password `demo1234`.
 
+## Demo reset
+
+The database is shared by local dev, production and the iOS app, so a rehearsal uses up the demo state.
+One command puts the demo family back, without touching any other patient:
+
+```bash
+cd web && npm run demo:reset
+```
+
+Afterwards: the daughter (S3456789C) is accepted for the mother (S2345678B) and **pending** for the
+father (S1234567A), who has a fresh "Allow?" card; both parents' questionnaires for today are cleared
+so "Fill in questionnaire" shows again; the daughter is not acting as anyone.
+
 ## Deploy (Vercel + Neon)
 
 Deployed with the Vercel CLI from `web/` (`vercel link --project cgh-physio-proms`, `vercel --prod`). To redeploy after a push: `cd web && vercel --prod`.
