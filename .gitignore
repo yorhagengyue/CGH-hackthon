@@ -4,3 +4,5 @@ node_modules/
 .env*
 !.env.example
 .DS_Store
+web/pnpm-lock.yaml
+web/yarn.lock
