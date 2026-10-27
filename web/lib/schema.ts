@@ -18,6 +18,7 @@ CREATE TABLE IF NOT EXISTS care_links (             -- caregiver (child) -> pati
   relationship TEXT NOT NULL,                        -- son, daughter, spouse ...
   status TEXT NOT NULL DEFAULT 'accepted',           -- pending | accepted | declined (parent must allow)
   responded_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   UNIQUE (caregiver_id, patient_id)
 );
 CREATE TABLE IF NOT EXISTS referrals (              -- doctor -> physio
@@ -73,6 +74,7 @@ CREATE TABLE IF NOT EXISTS sessions (
 );
 ALTER TABLE care_links ADD COLUMN IF NOT EXISTS status TEXT NOT NULL DEFAULT 'accepted';
 ALTER TABLE care_links ADD COLUMN IF NOT EXISTS responded_at TIMESTAMPTZ;
+ALTER TABLE care_links ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ NOT NULL DEFAULT now();
 ALTER TABLE notifications ADD COLUMN IF NOT EXISTS link_id INT;
 CREATE INDEX IF NOT EXISTS idx_surveys_patient ON surveys(patient_id, submitted_at);
 CREATE INDEX IF NOT EXISTS idx_appts_patient ON appointments(patient_id, scheduled_at);

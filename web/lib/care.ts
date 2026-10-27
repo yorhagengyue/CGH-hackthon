@@ -26,8 +26,8 @@ export async function linkAccepted(caregiverId: number, patientId: number): Prom
 
 export async function pendingRequests(patientId: number) {
   const q = await db();
-  return q<{ id: number; caregiver_id: number; name: string; relationship: string; created: string }>(
-    `SELECT c.id, c.caregiver_id, u.name, c.relationship FROM care_links c JOIN users u ON u.id = c.caregiver_id WHERE c.patient_id = $1 AND c.status = 'pending' ORDER BY c.id`, [patientId]);
+  return q<{ id: number; caregiver_id: number; name: string; caregiver_name: string; relationship: string; created_at: string }>(
+    `SELECT c.id, c.caregiver_id, u.name, u.name AS caregiver_name, c.relationship, c.created_at::text FROM care_links c JOIN users u ON u.id = c.caregiver_id WHERE c.patient_id = $1 AND c.status = 'pending' ORDER BY c.id`, [patientId]);
 }
 
 /** The parent answers. Only the patient the link points at may do this. */
