@@ -23,15 +23,18 @@ export default async function Hod({ searchParams }: { searchParams: Promise<{ q?
      FROM users u LEFT JOIN LATERAL (SELECT * FROM referrals r WHERE r.patient_id = u.id ORDER BY r.created_at DESC LIMIT 1) r ON true LEFT JOIN users p ON p.id = r.physio_id
      WHERE u.role='patient' AND ($1 = '' OR u.name ILIKE '%' || $1 || '%' OR r.diagnosis ILIKE '%' || $1 || '%' OR p.name ILIKE '%' || $1 || '%') ORDER BY u.name`, [search]);
   return <div className="space-y-4">
-    <div className="grid grid-cols-5 gap-3">{[[kpi.patients, "Patients"], [kpi.surveys, "PROM records"], [kpi.today, "Appointments today"], [kpi.today_done, "Questionnaires in for today"], [kpi.physios, "Physiotherapists"]].map(([n, l]) => <div key={l} className="bg-white rounded-2xl shadow-card px-5 py-4"><div className="text-[28px] font-extrabold tabular-nums leading-none text-cgh-ink">{n}</div><div className="text-xs text-slate-500 mt-2">{l}</div></div>)}</div>
-    <div className="grid lg:grid-cols-2 gap-4">
+    <div className="grid md:grid-cols-3 gap-4">{[[`${kpi.today_done} of ${kpi.today}`, "patients today have already answered their questionnaire"], [kpi.patients, "patients under physiotherapy, with " + kpi.surveys + " questionnaires on record"], [kpi.physios, "physiotherapists in the department"]].map(([n, l]) => <div key={String(l)} className="bg-white rounded-2xl shadow-card px-6 py-5"><div className="text-[36px] font-extrabold tabular-nums leading-none text-cgh-ink">{n}</div><div className="text-base text-slate-700 mt-2">{l}</div></div>)}</div>
+    <details><summary className="cursor-pointer text-cgh-blue font-bold">Outcomes, workload and today's clinic</summary>
+    <div className="grid lg:grid-cols-2 gap-4 mt-3">
       <Card title="Outcomes by body region" right="first → latest PROM, patients with ≥2"><table className="tbl"><thead><tr><th>Region</th><th>Patients</th><th>Δ index</th><th>Δ EQ-VAS</th><th>Δ pain</th></tr></thead><tbody>{cohort.map((c) => <tr key={c.region} ><td className="py-1.5 font-semibold">{c.region}</td><td>{c.n}</td><td className={c.d_index > 0 ? "text-ok" : "text-danger"}>{c.d_index > 0 ? "+" : ""}{c.d_index}</td><td className={c.d_vas > 0 ? "text-ok" : "text-danger"}>{c.d_vas > 0 ? "+" : ""}{c.d_vas}</td><td className={c.d_pain < 0 ? "text-ok" : "text-danger"}>{c.d_pain > 0 ? "+" : ""}{c.d_pain}</td></tr>)}</tbody></table></Card>
       <Card title="By physiotherapist"><table className="tbl"><thead><tr><th>Physiotherapist</th><th>Active patients</th><th>PROM records</th></tr></thead><tbody>{byPhysio.map((p) => <tr key={p.name} ><td>{p.name}</td><td>{p.patients}</td><td>{p.surveys}</td></tr>)}</tbody></table>
         <h3 className="text-sm font-semibold mt-4 mb-1">Today across the department</h3>
         <table className="tbl"><tbody>{list.map((r) => <tr key={r.appt_id} ><td>{new Date(r.scheduled_at).toLocaleTimeString("en-SG", { hour: "numeric", minute: "2-digit", timeZone: "Asia/Singapore" })}</td><td><a href={`/patients/${r.patient_id}`} className="text-cgh-blue hover:underline">{r.name}</a></td><td className="text-slate-500">{r.physio_name}</td><td>{r.cur ? <><ProfileBadge s={levels(r.cur)} /> {r.cur.index_value.toFixed(2)} <Arrow f={r.flags.index} /></> : <Pill ok={false}>pending</Pill>}</td></tr>)}</tbody></table></Card>
     </div>
-    <Card title="All patients" right={<form className="inline"><input name="q" defaultValue={search} placeholder="Search" className="border border-slate-300 rounded-lg px-2 py-1 text-sm" /></form>}>
+    </details>
+    <details><summary className="cursor-pointer text-cgh-blue font-bold">All patients ({all.length})</summary>
+    <Card className="mt-3" title="All patients" right={<form className="inline"><input name="q" defaultValue={search} placeholder="Search" className="border border-slate-300 rounded-lg px-2 py-1 text-sm" /></form>}>
       <table className="tbl"><thead><tr><th>Patient</th><th>Diagnosis</th><th>Physio</th><th>PROMs</th><th>Last PROM</th></tr></thead><tbody>{all.map((r) => <tr key={r.id} ><td><a href={`/patients/${r.id}`} className="font-semibold text-cgh-blue hover:underline">{r.name}</a></td><td>{r.diagnosis ?? "—"}<div className="text-xs text-slate-500">{r.region}</div></td><td>{r.physio ?? "—"}</td><td>{r.n}</td><td className="text-slate-500">{fmtD(r.last)}</td></tr>)}</tbody></table>
-    </Card>
+    </Card></details>
   </div>;
 }

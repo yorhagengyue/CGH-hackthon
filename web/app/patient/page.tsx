@@ -2,7 +2,8 @@ import { redirect } from "next/navigation";
 import { session } from "@/lib/auth";
 import { db, one } from "@/lib/db";
 import { patientBundle } from "@/lib/data";
-import { PlainProgress, VerdictCard, VisitStrip } from "@/components/PlainProgress";
+import { PlainProgress } from "@/components/PlainProgress";
+import { VERDICT_TEXT, verdict } from "@/lib/plain";
 import { Card, Pill, fmtDT, fmtD, age, startOfTodaySG } from "@/components/ui";
 import { Nav } from "@/components/Nav";
 import { Suspense } from "react";
@@ -27,18 +28,28 @@ export default async function PatientPage({ searchParams }: { searchParams: Prom
     <h1 className="text-[30px]">{s.user.role === "caregiver" ? b.patient.name : `Hello, ${b.patient.name}`}</h1>
     <div className="my-4 md:hidden"><Suspense><Nav items={tabs.map(([k, l]) => [k === "home" ? "/patient" : `/patient?tab=${k}`, l])} /></Suspense></div>
     {done && <div className="mb-3 bg-ok-bg rounded-lg px-3 py-2 text-sm">Thank you, your questionnaire has been sent to your physiotherapist.</div>}
-    {tab === "home" && <div className="grid md:grid-cols-2 gap-4">
-      {b.surveys.length > 0 && <div className="md:col-span-2"><VerdictCard cur={cur} prev={prev} compact /></div>}
-      <Card title="Next appointment">{next ? <><div className="text-xl font-bold">{fmtDT(next.scheduled_at)}</div><div className="text-slate-600 text-sm">{next.kind} visit · {next.physio_name ?? "physiotherapist TBC"}</div><div className="mt-3">{next.survey_id ? <Pill ok>Questionnaire received</Pill> : <a href={`/survey?appt=${next.id}`} className="inline-block px-4 py-2 rounded-lg bg-cgh-blue text-white text-sm font-semibold">Fill in questionnaire now (2 min)</a>}</div></> : <p className="text-slate-500 text-sm">No upcoming appointment.</p>}</Card>
-      <Card title="To do">{pending.length ? pending.map((a) => <div key={a.id} className="flex items-center justify-between text-sm py-1.5 border-b border-slate-100 last:border-0"><span>Questionnaire for the visit on {fmtD(a.scheduled_at)}</span><a href={`/survey?appt=${a.id}`} className="px-4 py-2 rounded-lg bg-cgh-blue text-white text-sm font-bold hover:bg-cgh-blue-dark">Fill in now</a></div>) : <p className="text-slate-500 text-sm">Nothing to do right now.</p>}</Card>
-      <Card title="My condition">{b.referrals[0] ? <><div className="font-semibold">{b.referrals[0].diagnosis}</div><div className="text-sm text-slate-600">{b.referrals[0].region} · referred by {b.referrals[0].doctor_name} on {fmtD(b.referrals[0].created_at)}</div><div className="text-sm text-slate-600">Physiotherapist: {b.referrals[0].physio_name ?? "to be assigned"}</div></> : <p className="text-slate-500 text-sm">No referral yet.</p>}</Card>
-      <Card title="Recent notifications">{notes.slice(0, 4).map((n) => <div key={n.id} className="text-sm py-1.5 border-b border-slate-100 last:border-0"><span className="text-xs text-slate-400 mr-2">{fmtD(n.send_at)}</span>{n.message}</div>)}{notes.length === 0 && <p className="text-slate-500 text-sm">None.</p>}</Card>
-      <Card title="Your visits" right={<a href="/patient?tab=progress" className="text-cgh-blue font-semibold">See how you answered</a>} className="md:col-span-2"><VisitStrip surveys={b.surveys} /></Card>
-    </div>}
+    {tab === "home" && (() => { const v = verdict(cur, prev); const t = VERDICT_TEXT[v]; const today = next && new Date(next.scheduled_at).toLocaleDateString("en-CA", { timeZone: "Asia/Singapore" }) === new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Singapore" });
+      return <div className="max-w-xl">
+        <div className="bg-white rounded-2xl shadow-card p-6">
+          {next ? <>
+            <div className="text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500">{today ? "Today" : "Next visit"}</div>
+            <div className="text-[28px] font-extrabold text-cgh-ink mt-1 leading-tight">{fmtDT(next.scheduled_at)}</div>
+            <div className="text-lg text-slate-700 mt-1">with {next.physio_name ?? "your physiotherapist"}</div>
+            <div className="mt-5">{!next.survey_id ? <a href={`/survey?appt=${next.id}`} className="inline-block px-6 py-3 rounded-xl bg-cgh-blue text-white font-bold text-base hover:bg-cgh-blue-dark">Fill in questionnaire</a>
+              : today ? <a href="/patient?tab=progress" className="inline-block px-6 py-3 rounded-xl bg-cgh-blue text-white font-bold text-base hover:bg-cgh-blue-dark">Begin session</a>
+              : <Pill ok>Questionnaire received</Pill>}</div>
+          </> : <>
+            <div className="text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500">Next visit</div>
+            <div className="text-[28px] font-extrabold text-cgh-ink mt-1 leading-tight">Nothing booked yet</div>
+            <div className="text-lg text-slate-700 mt-1">Your clinic will send you an SMS when a visit is booked.</div>
+          </>}
+        </div>
+        {cur && <p className={`mt-4 text-lg font-bold ${t.tone === "ok" ? "text-ok" : t.tone === "warn" ? "text-warn" : "text-slate-700"}`}>{v === "first" ? "Your first questionnaire is in." : t.title}</p>}
+      </div>; })()}
     {tab === "survey" && <Card title="Questionnaire (EQ-5D-5L)">{pending.length ? <div className="space-y-2">{pending.map((a) => <div key={a.id} className="flex items-center justify-between text-sm"><span>For your appointment on <b>{fmtDT(a.scheduled_at)}</b></span><a href={`/survey?appt=${a.id}`} className="px-3 py-1.5 rounded bg-cgh-blue text-white text-xs font-semibold">Start</a></div>)}</div> : <div className="text-sm text-slate-600">No questionnaire due right now. You can still record how you feel today: <a href="/survey" className="underline text-cgh-blue">fill an extra entry</a>.</div>}</Card>}
     {tab === "progress" && <PlainProgress patientId={patientId} caregiver={s.user.role === "caregiver"} />}
     {tab === "calendar" && <Card title="Calendar"><table className="tbl"><thead><tr><th>When</th><th>Visit</th><th>Physiotherapist</th><th>Questionnaire</th></tr></thead><tbody>{[...b.appointments].reverse().map((a) => <tr key={a.id} ><td>{fmtDT(a.scheduled_at)}</td><td>{a.kind} <span className="text-slate-400">· {a.status}</span></td><td>{a.physio_name ?? "—"}</td><td>{a.survey_id ? <Pill ok>done</Pill> : a.status === "scheduled" ? <a href={`/survey?appt=${a.id}`} className="underline text-cgh-blue">fill now</a> : "—"}</td></tr>)}</tbody></table></Card>}
     {tab === "notifications" && <Card title="Notifications" right={<form action={markReadAction}><button className="underline">Mark all as read</button></form>}>{notes.map((n) => <div key={n.id} className={`text-sm py-2 border-b border-slate-100 last:border-0 ${n.channel === "app" && !n.read_at ? "font-semibold" : ""}`}><span className="text-xs text-slate-400 mr-2">{fmtDT(n.send_at)} · {n.channel.toUpperCase()}</span>{n.message}</div>)}{notes.length === 0 && <p className="text-slate-500 text-sm">None.</p>}</Card>}
-    {tab === "profile" && <Card title="Personal particulars"><dl className="grid grid-cols-[160px_1fr] gap-y-2 text-sm"><dt className="text-slate-500">Name</dt><dd>{b.patient.name}</dd><dt className="text-slate-500">NRIC</dt><dd>{b.patient.login_id.slice(0, 1)}****{b.patient.login_id.slice(-4)}</dd><dt className="text-slate-500">Birthday</dt><dd>{fmtD(b.patient.birthday)} ({age(b.patient.birthday) ?? "-"} y)</dd><dt className="text-slate-500">Gender</dt><dd>{b.patient.gender ?? "—"}</dd><dt className="text-slate-500">Mobile</dt><dd>{b.patient.phone ?? "—"}</dd><dt className="text-slate-500">Address</dt><dd>{b.patient.address ?? "—"}</dd><dt className="text-slate-500">Caregivers</dt><dd>{b.caregivers.length ? b.caregivers.map((c) => `${c.name} (${c.relationship})`).join(", ") : "none linked"}</dd></dl></Card>}
+    {tab === "profile" && <Card title="Personal particulars"><dl className="grid grid-cols-[160px_1fr] gap-y-2 text-sm"><dt className="text-slate-500">Name</dt><dd>{b.patient.name}</dd><dt className="text-slate-500">NRIC</dt><dd>{b.patient.login_id.slice(0, 1)}****{b.patient.login_id.slice(-4)}</dd><dt className="text-slate-500">Birthday</dt><dd>{fmtD(b.patient.birthday)} ({age(b.patient.birthday) ?? "-"} y)</dd><dt className="text-slate-500">Gender</dt><dd>{b.patient.gender ?? "—"}</dd><dt className="text-slate-500">Mobile</dt><dd>{b.patient.phone ?? "—"}</dd><dt className="text-slate-500">Address</dt><dd>{b.patient.address ?? "—"}</dd><dt className="text-slate-500">Condition</dt><dd>{b.referrals[0] ? `${b.referrals[0].diagnosis} · ${b.referrals[0].region} · physiotherapist ${b.referrals[0].physio_name ?? "to be assigned"}` : "—"}</dd><dt className="text-slate-500">Caregivers</dt><dd>{b.caregivers.length ? b.caregivers.map((c) => `${c.name} (${c.relationship})`).join(", ") : "none linked"}</dd></dl></Card>}
   </div>;
 }

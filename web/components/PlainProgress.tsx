@@ -1,5 +1,5 @@
 import { patientBundle, type Survey } from "@/lib/data";
-import { DIMS, DIM_ICON, VERDICT_TEXT, dimChange, dimName, dimPhrase, verdict } from "@/lib/plain";
+import { DIMS, DIM_ICON, VERDICT_TEXT, changedLines, dimChange, dimName, dimPhrase, painLine, verdict } from "@/lib/plain";
 import { Card, LV_BG, Pill, TrendChart, fmtD, fmtDT, startOfTodaySG } from "./ui";
 
 const dLabel = (iso: string) => new Date(iso).toLocaleDateString("en-SG", { day: "numeric", month: "short", timeZone: "Asia/Singapore" });
@@ -39,44 +39,51 @@ function Bar({ value, max, prev, label }: { value: number; max: number; prev: nu
   </div>;
 }
 
-/** The patient's (or caregiver's) plain-language view of the latest questionnaire. */
+/** Everything below the first screen: five rows with dots, pain and health bars, visit strip, previous answers. */
+export function AnswersDetail({ surveys, caregiver = false }: { surveys: Survey[]; caregiver?: boolean }) {
+  const cur = surveys.at(-1) ?? null, prev = surveys.at(-2) ?? null;
+  if (!cur) return null;
+  return <div className="space-y-4">
+    <Card title="How you answered" right={`on ${fmtD(cur.submitted_at)}`}>
+      <div className="divide-y divide-slate-100">{DIMS.map((d) => <div key={d} className="py-3 flex items-start gap-3">
+        <span className="w-9 h-9 rounded-xl bg-cgh-mist text-cgh-blue flex items-center justify-center shrink-0"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d={DIM_ICON[d]} /></svg></span>
+        <div className="flex-1 min-w-0"><div className="text-xs font-bold uppercase tracking-wide text-slate-500">{dimName(d)}</div><div className="font-semibold text-cgh-ink">{dimPhrase(d, cur[d])}</div>{prev && <div className="text-xs text-slate-500 mt-0.5">{dimChange(cur[d], prev[d])}</div>}</div>
+        <Dots level={cur[d]} />
+      </div>)}</div>
+      <div className="pt-4 mt-1 border-t border-slate-100">
+        <div className="font-semibold">Pain today: <span className="text-cgh-ink font-extrabold">{cur.pain} out of 10</span></div>
+        <div className="grid grid-cols-10 gap-1 mt-2">{Array.from({ length: 10 }, (_, i) => <div key={i} className={`h-3 rounded ${i < cur.pain ? (cur.pain >= 7 ? "bg-danger" : cur.pain >= 4 ? "bg-warn" : "bg-ok") : "bg-slate-200"}`} />)}</div>
+      </div>
+      <div className="pt-4 mt-3 border-t border-slate-100">
+        <div className="font-semibold">You rated your health <span className="text-cgh-ink font-extrabold">{cur.eq_vas} out of 100</span></div>
+        <Bar value={cur.eq_vas} max={100} prev={prev?.eq_vas ?? null} label="health rating" />
+        <div className="h-4" />
+      </div>
+    </Card>
+    <Card title="Your visits"><VisitStrip surveys={surveys} /></Card>
+    {caregiver && <Card title="Pain over visits"><TrendChart points={surveys.map((s) => ({ x: dLabel(s.submitted_at), y: s.pain }))} max={10} min={0} color="#b91c1c" label="" /></Card>}
+    <Card title="Previous answers" tight><table className="tbl"><thead><tr><th>Date</th><th>How it went</th><th>Filled by</th></tr></thead><tbody>
+      {[...surveys].reverse().map((s, i, arr) => { const p = arr[i + 1] ?? null; const v = verdict(s, p); const t = VERDICT_TEXT[v]; return <tr key={s.id}><td>{fmtDT(s.submitted_at)}</td><td><Pill tone={t.tone}>{v === "first" ? "First questionnaire" : t.short}</Pill></td><td className="text-slate-500">{s.filled_by_name}</td></tr>; })}
+    </tbody></table></Card>
+  </div>;
+}
+
+/** First screen of the progress tab: the verdict as the headline, what changed, pain. Everything else behind one click. */
 export async function PlainProgress({ patientId, caregiver = false }: { patientId: number; caregiver?: boolean }) {
   const b = await patientBundle(patientId);
   if (!b) return <p>Patient not found.</p>;
-  const { surveys, appointments } = b;
+  const { surveys } = b;
   const cur = surveys.at(-1) ?? null, prev = surveys.at(-2) ?? null;
-  const upcoming = appointments.filter((a) => a.status === "scheduled" && new Date(a.scheduled_at) >= startOfTodaySG());
-  return <div className="grid lg:grid-cols-[1fr_360px] gap-4">
-    <div className="space-y-4">
-      <VerdictCard cur={cur} prev={prev} />
-      {cur ? <>
-        <Card title="How you answered" right={`on ${fmtD(cur.submitted_at)}`}>
-          <div className="divide-y divide-slate-100">{DIMS.map((d) => <div key={d} className="py-3 flex items-start gap-3">
-            <span className="w-9 h-9 rounded-xl bg-cgh-mist text-cgh-blue flex items-center justify-center shrink-0"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d={DIM_ICON[d]} /></svg></span>
-            <div className="flex-1 min-w-0"><div className="text-xs font-bold uppercase tracking-wide text-slate-500">{dimName(d)}</div><div className="font-semibold text-cgh-ink">{dimPhrase(d, cur[d])}</div>{prev && <div className="text-xs text-slate-500 mt-0.5">{dimChange(cur[d], prev[d])}</div>}</div>
-            <Dots level={cur[d]} />
-          </div>)}</div>
-          <div className="pt-4 mt-1 border-t border-slate-100">
-            <div className="font-semibold">Pain today: <span className="text-cgh-ink font-extrabold">{cur.pain} out of 10</span>{prev && <span className="text-xs text-slate-500 font-normal ml-2">{cur.pain < prev.pain ? "less than last time" : cur.pain > prev.pain ? "more than last time" : "same as last time"} ({prev.pain})</span>}</div>
-            <div className="grid grid-cols-10 gap-1 mt-2">{Array.from({ length: 10 }, (_, i) => <div key={i} className={`h-3 rounded ${i < cur.pain ? (cur.pain >= 7 ? "bg-danger" : cur.pain >= 4 ? "bg-warn" : "bg-ok") : "bg-slate-200"}`} />)}</div>
-            <div className="flex justify-between text-[10px] text-slate-400 mt-1"><span>No pain</span><span>Worst pain</span></div>
-          </div>
-          <div className="pt-4 mt-3 border-t border-slate-100">
-            <div className="font-semibold">You rated your health <span className="text-cgh-ink font-extrabold">{cur.eq_vas} out of 100</span></div>
-            <Bar value={cur.eq_vas} max={100} prev={prev?.eq_vas ?? null} label="health rating" />
-            <div className="flex justify-between text-[10px] text-slate-400 mt-5"><span>Worst health</span><span>Best health</span></div>
-          </div>
-        </Card>
-        <Card title="Your visits" right="each box is one questionnaire"><VisitStrip surveys={surveys} /></Card>
-        {caregiver && <Card title="Pain over visits" right="0 = no pain, 10 = worst pain"><TrendChart points={surveys.map((s) => ({ x: dLabel(s.submitted_at), y: s.pain }))} max={10} min={0} color="#b91c1c" label="" /></Card>}
-        <Card title="Previous answers" tight><table className="tbl"><thead><tr><th>Date</th><th>How it went</th><th>Filled by</th></tr></thead><tbody>
-          {[...surveys].reverse().map((s, i, arr) => { const p = arr[i + 1] ?? null; const v = verdict(s, p); const t = VERDICT_TEXT[v]; return <tr key={s.id}><td>{fmtDT(s.submitted_at)}</td><td><Pill tone={t.tone}>{v === "first" ? "First questionnaire" : t.short}</Pill></td><td className="text-slate-500">{s.filled_by_name}</td></tr>; })}
-        </tbody></table></Card>
-      </> : <Card title="How you answered"><p className="text-sm text-slate-500">After your first questionnaire this page shows your answers in plain words and how they change visit by visit.</p></Card>}
-    </div>
-    <div className="space-y-4">
-      <Card title="Next appointments">{upcoming.length === 0 && <p className="text-sm text-slate-500">No upcoming appointment.</p>}{upcoming.map((a) => <div key={a.id} className="flex items-center gap-2 text-sm py-2 border-b border-slate-100 last:border-0"><div className="flex-1"><div className="font-semibold">{fmtDT(a.scheduled_at)}</div><div className="text-xs text-slate-500">{a.kind} · {a.physio_name ?? "physiotherapist to be confirmed"}</div></div>{a.survey_id ? <Pill ok>Questionnaire received</Pill> : <a href={`/survey?appt=${a.id}`} className="px-3 py-1.5 rounded-lg bg-cgh-blue text-white text-xs font-bold">Fill in now</a>}</div>)}</Card>
-      {b.referrals[0] && <Card title="My condition"><div className="font-semibold">{b.referrals[0].diagnosis}</div><div className="text-sm text-slate-600 mt-1">{b.referrals[0].region} · referred by {b.referrals[0].doctor_name}</div><div className="text-sm text-slate-600">Physiotherapist: {b.referrals[0].physio_name ?? "to be assigned"}</div></Card>}
-    </div>
+  if (!cur) return <div className="max-w-xl"><h1 className="text-[30px]">No questionnaire yet</h1><p className="text-slate-600 mt-2">After your first questionnaire, this page tells you how you are doing compared with your last visit.</p></div>;
+  const v = verdict(cur, prev); const t = VERDICT_TEXT[v];
+  const lines = changedLines(cur, prev);
+  return <div className="max-w-xl">
+    <h1 className={`text-[32px] ${t.tone === "ok" ? "text-ok" : t.tone === "warn" ? "text-warn" : "text-cgh-ink"}`}>{t.title}</h1>
+    <ul className="mt-5 space-y-2 text-lg">
+      {lines.map((l) => <li key={l} className="bg-white rounded-xl shadow-card px-4 py-3">{l}</li>)}
+      {prev && lines.length === 0 && <li className="bg-white rounded-xl shadow-card px-4 py-3">Your answers are the same as last time</li>}
+      <li className="bg-white rounded-xl shadow-card px-4 py-3">{painLine(cur, prev)}</li>
+    </ul>
+    <details className="mt-6 group"><summary className="cursor-pointer text-cgh-blue font-bold list-none inline-flex items-center gap-2">See all my answers<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="group-open:rotate-180 transition"><path d="M6 9l6 6 6-6" /></svg></summary><div className="mt-4"><AnswersDetail surveys={surveys} caregiver={caregiver} /></div></details>
   </div>;
 }

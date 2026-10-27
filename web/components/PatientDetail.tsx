@@ -4,6 +4,7 @@ import { Arrow, Card, LV_BG, Pill, ProfileBadge, Stat, TrendChart, age, fmtD, fm
 import { CopyButton } from "./CopyButton";
 import { ActionForm, Field, inputCls } from "./Form";
 import { createAppointmentAction } from "@/app/actions";
+import { VERDICT_TEXT, verdict } from "@/lib/plain";
 
 const dLabel = (iso: string) => new Date(iso).toLocaleDateString("en-SG", { day: "numeric", month: "short", timeZone: "Asia/Singapore" });
 
@@ -19,34 +20,31 @@ export async function PatientDetail({ patientId, staff = false, self = false }: 
     <div className="space-y-4">
       <Card title={self ? "My progress" : "Patient"} right={staff ? `${referrals.length} referral(s) · ${surveys.length} PROMs` : ""}>
         {!self && <div className="mb-3"><div className="text-lg font-bold">{patient.name}</div><div className="text-slate-600 text-sm">{patient.login_id.slice(0, 1)}****{patient.login_id.slice(-4)} · {patient.gender ?? "-"} · {age(patient.birthday) ?? "-"} y · {patient.phone ?? "no phone"}{caregivers.length > 0 && <> · caregivers: {caregivers.map((c) => `${c.name} (${c.relationship})`).join(", ")}</>}</div></div>}
-        {cur ? <>
-          <div className="grid grid-cols-3 gap-3 mb-4">
-            <Stat value={cur.pain} unit="/10" label="Pain NRS" change={fl.pain} />
-            <Stat value={cur.index_value.toFixed(3)} label="EQ-5D-5L index" change={fl.index} />
-            <Stat value={cur.eq_vas} label="EQ-VAS" change={fl.vas} />
-          </div>
-          <ul className="text-xs text-slate-500 mb-4 space-y-0.5 list-disc pl-4">
-            <li>Pain NRS 0–10, lower is better{prev && <> · was {prev.pain} · {cur.pain - prev.pain >= 0 ? "+" : ""}{cur.pain - prev.pain}{fl.pain === "stable" ? ", not clinically meaningful" : ", clinically meaningful"}</>}</li>
-            <li>EQ-5D-5L index 0–1, higher is better ({VALUE_SET} value set){prev && <> · was {prev.index_value.toFixed(2)} · {cur.index_value - prev.index_value >= 0 ? "+" : ""}{(cur.index_value - prev.index_value).toFixed(2)}{fl.index === "stable" ? ", not clinically meaningful" : ", clinically meaningful"}</>}</li>
-            <li>EQ-VAS 0–100, patient's own rating of their health, higher is better{prev && <> · was {prev.eq_vas} · {cur.eq_vas - prev.eq_vas >= 0 ? "+" : ""}{cur.eq_vas - prev.eq_vas}{fl.vas === "stable" ? ", not clinically meaningful" : ", clinically meaningful"}</>}</li>
-          </ul>
-          <table className="tbl mb-2"><thead><tr><th>Dimension</th><th>Latest · {fmtD(cur.submitted_at)}</th><th>{prev ? <>Previous · {fmtD(prev.submitted_at)}</> : "Previous"}</th></tr></thead><tbody>
-            {DIMS.map((d) => <tr key={d} ><td>{DIM_LABEL[d]}</td><td><span className={`inline-block w-6 text-center rounded font-bold ${LV_BG[cur[d]]}`}>{cur[d]}</span> <span className="text-slate-500">{LEVEL_LABEL[cur[d]]}</span></td><td>{prev ? <span className={`inline-block w-6 text-center rounded font-bold ${LV_BG[prev[d]]}`}>{prev[d]}</span> : "—"}</td></tr>)}
+        {cur ? (() => { const v = verdict(cur, prev); const t = VERDICT_TEXT[v]; return <>
+          <div className="mb-3"><Pill tone={t.tone}>{v === "first" ? "First questionnaire" : v === "better" ? "Improved since last visit" : v === "same" ? "Stable since last visit" : "Worse since last visit"}</Pill> <span className="text-xs text-slate-500 ml-2">submitted {fmtDT(cur.submitted_at)} by {cur.filled_by_name}</span></div>
+          <table className="tbl mb-3"><thead><tr><th>Dimension</th><th>Now · {fmtD(cur.submitted_at)}</th><th>{prev ? <>Last · {fmtD(prev.submitted_at)}</> : "Last"}</th></tr></thead><tbody>
+            {DIMS.map((d) => <tr key={d}><td>{DIM_LABEL[d]}</td><td><span className={`inline-block w-6 text-center rounded font-bold ${LV_BG[cur[d]]}`}>{cur[d]}</span> <span className="text-slate-500">{LEVEL_LABEL[cur[d]]}</span></td><td>{prev ? <><span className={`inline-block w-6 text-center rounded font-bold ${LV_BG[prev[d]]}`}>{prev[d]}</span> <span className="text-slate-500">{LEVEL_LABEL[prev[d]]}</span></> : "—"}</td></tr>)}
           </tbody></table>
-        </> : <p className="text-slate-500 text-sm">No questionnaire submitted yet.</p>}
-        <div className="grid md:grid-cols-3 gap-3">
-          <TrendChart points={surveys.map((s) => ({ x: dLabel(s.submitted_at), y: s.index_value }))} max={1} min={0} label="EQ-5D-5L index (0–1)" fmt={(v) => v.toFixed(2)} />
-          <TrendChart points={surveys.map((s) => ({ x: dLabel(s.submitted_at), y: s.eq_vas }))} max={100} min={0} color="#28a8e0" label="EQ-VAS (0–100)" />
-          <TrendChart points={surveys.map((s) => ({ x: dLabel(s.submitted_at), y: s.pain }))} max={10} min={0} color="#b91c1c" label="Pain (0–10)" />
-        </div>
-        {staff && cur && <div className="mt-3 flex gap-2 items-start"><CopyButton text={clinicalNote(patient, referrals[0]?.diagnosis, cur, prev, first)} /><details className="text-xs"><summary className="cursor-pointer text-slate-500 py-1.5">preview note</summary><pre className="bg-cgh-ink text-slate-100 p-3 rounded-lg whitespace-pre-wrap">{clinicalNote(patient, referrals[0]?.diagnosis, cur, prev, first)}</pre></details></div>}
+          <ul className="text-sm text-slate-700 space-y-1">
+            <li><b>Pain {cur.pain}/10</b>{prev && <> · last {prev.pain}</>} <span className="text-slate-400">(NRS, lower is better{prev && fl.pain !== "stable" ? ", change is clinically meaningful" : ""})</span></li>
+            <li><b>EQ-5D-5L index {cur.index_value.toFixed(2)}</b>{prev && <> · last {prev.index_value.toFixed(2)}</>} <span className="text-slate-400">(0–1, higher is better, {VALUE_SET}{prev && fl.index !== "stable" ? ", change is clinically meaningful" : ""})</span></li>
+            <li><b>EQ-VAS {cur.eq_vas}/100</b>{prev && <> · last {prev.eq_vas}</>} <span className="text-slate-400">(patient's own health rating, higher is better{prev && fl.vas !== "stable" ? ", change is clinically meaningful" : ""})</span></li>
+          </ul>
+          <details className="mt-3"><summary className="cursor-pointer text-cgh-blue font-bold text-sm">Trend over visits</summary>
+            <div className="grid md:grid-cols-3 gap-3 mt-2">
+              <TrendChart points={surveys.map((s) => ({ x: dLabel(s.submitted_at), y: s.index_value }))} max={1} min={0} label="EQ-5D-5L index (0–1)" fmt={(v) => v.toFixed(2)} />
+              <TrendChart points={surveys.map((s) => ({ x: dLabel(s.submitted_at), y: s.eq_vas }))} max={100} min={0} color="#28a8e0" label="EQ-VAS (0–100)" />
+              <TrendChart points={surveys.map((s) => ({ x: dLabel(s.submitted_at), y: s.pain }))} max={10} min={0} color="#b91c1c" label="Pain (0–10)" />
+            </div></details>
+          {staff && <div className="mt-3 flex gap-2 items-start"><CopyButton text={clinicalNote(patient, referrals[0]?.diagnosis, cur, prev, first)} /><details className="text-xs"><summary className="cursor-pointer text-slate-500 py-1.5">preview note</summary><pre className="bg-cgh-ink text-slate-100 p-3 rounded-lg whitespace-pre-wrap">{clinicalNote(patient, referrals[0]?.diagnosis, cur, prev, first)}</pre></details></div>}
+        </>; })() : <p className="text-slate-500 text-sm">No questionnaire submitted yet.</p>}
       </Card>
-      <Card title={self ? "My previous answers" : "All questionnaires"}>
+      <details><summary className="cursor-pointer text-cgh-blue font-bold text-sm mb-2">All questionnaires ({surveys.length})</summary><Card title="All questionnaires" tight>
         <table className="tbl"><thead><tr><th>Submitted</th><th>Profile</th><th>Index</th><th>EQ-VAS</th><th>Pain</th><th>Filled by</th></tr></thead><tbody>
           {[...surveys].reverse().map((s) => <tr key={s.id} ><td>{fmtDT(s.submitted_at)}</td><td><ProfileBadge s={levels(s)} /></td><td>{s.index_value.toFixed(3)}</td><td>{s.eq_vas}</td><td>{s.pain}/10</td><td className="text-slate-500">{s.filled_by_name}</td></tr>)}
           {surveys.length === 0 && <tr><td colSpan={6} className="text-slate-400 py-2">None yet</td></tr>}
         </tbody></table>
-      </Card>
+      </Card></details>
     </div>
     <div className="space-y-4">
       <Card title="Referrals">{referrals.map((r) => <div key={r.id} className="text-sm border-b border-slate-100 last:border-0 py-2"><div className="font-semibold">{r.diagnosis}</div><div className="text-slate-600">{r.region} · by {r.doctor_name} · {fmtD(r.created_at)}</div><div className="text-slate-600">Physio: {r.physio_name ?? <span className="text-warn">unassigned</span>} · <Pill ok={r.status === "active"}>{r.status}</Pill></div>{r.notes && <div className="text-slate-500 text-xs mt-1">{r.notes}</div>}</div>)}{referrals.length === 0 && <p className="text-slate-400 text-sm">No referral yet.</p>}</Card>

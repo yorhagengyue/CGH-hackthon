@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { session } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { Card, fmtDT, Pill } from "@/components/ui";
+import { fmtDT } from "@/components/ui";
 import { ActionForm, Field, inputCls } from "@/components/Form";
 import { actAsAction, linkParentAction } from "../actions";
 
@@ -15,17 +15,16 @@ export default async function Caregiver() {
        (SELECT s.id FROM appointments a JOIN surveys s ON s.appointment_id = a.id WHERE a.patient_id = u.id AND a.status='scheduled' AND a.scheduled_at >= date_trunc('day', now() AT TIME ZONE 'Asia/Singapore') AT TIME ZONE 'Asia/Singapore' ORDER BY a.scheduled_at LIMIT 1) AS next_done,
        (SELECT COUNT(*)::int FROM surveys s WHERE s.patient_id = u.id) AS n_surveys
      FROM care_links c JOIN users u ON u.id = c.patient_id WHERE c.caregiver_id = $1 ORDER BY u.name`, [s.user.id]);
-  return <div className="max-w-3xl mx-auto"><h1 className="text-2xl font-bold mb-4">My parents</h1>
+  return <div className="max-w-3xl mx-auto"><h1 className="text-[30px] mb-4">My parents</h1>
     <div className="grid md:grid-cols-2 gap-4">
-      {parents.map((p) => <Card key={p.id} title={p.name} right={`your ${p.relationship}`}>
-        <div className="text-sm text-slate-600">Next appointment: {p.next_at ? fmtDT(p.next_at) : "none"}</div>
-        <div className="text-sm text-slate-600 mt-1">{p.n_surveys} questionnaires on record</div>
-        <div className="mt-3 flex gap-2 items-center">
-          <form action={actAsAction}><input type="hidden" name="patient_id" value={p.id} /><button className="px-3 py-1.5 rounded-lg border border-slate-300 bg-white text-sm">Open {p.name.split(" ")[0]}'s page</button></form>
-          {p.next_id && (p.next_done ? <Pill ok>questionnaire done</Pill> : <form action={actAsAction}><input type="hidden" name="patient_id" value={p.id} /><input type="hidden" name="appt" value={p.next_id} /><button className="px-3 py-1.5 rounded-lg bg-cgh-blue text-white text-sm font-semibold">Fill questionnaire for {p.name.split(" ")[0]}</button></form>)}
-        </div>
-      </Card>)}
-      <Card title="Link another parent"><ActionForm action={linkParentAction} submit="Link"><Field label="Parent's NRIC"><input name="parent_nric" className={inputCls} placeholder="S1234567A" required /></Field><Field label="Relationship"><select name="relationship" className={inputCls}><option>son</option><option>daughter</option><option>spouse</option><option>grandchild</option><option>caregiver</option></select></Field></ActionForm></Card>
+      {parents.map((p) => <div key={p.id} className="bg-white rounded-2xl shadow-card p-6">
+        <div className="text-[22px] font-extrabold text-cgh-ink leading-tight">{p.name}</div>
+        <div className="text-lg text-slate-700 mt-1">{p.next_at ? `Next visit ${fmtDT(p.next_at)}` : "No visit booked"}</div>
+        <div className="mt-5">{p.next_id && !p.next_done
+          ? <form action={actAsAction}><input type="hidden" name="patient_id" value={p.id} /><input type="hidden" name="appt" value={p.next_id} /><button className="px-6 py-3 rounded-xl bg-cgh-blue text-white font-bold hover:bg-cgh-blue-dark">Fill questionnaire for {p.name.split(" ")[0]}</button></form>
+          : <form action={actAsAction}><input type="hidden" name="patient_id" value={p.id} /><button className="px-6 py-3 rounded-xl bg-cgh-blue text-white font-bold hover:bg-cgh-blue-dark">See how {p.name.split(" ")[0]} is doing</button></form>}</div>
+      </div>)}
     </div>
+    <details className="mt-6"><summary className="cursor-pointer text-cgh-blue font-bold">Link another parent</summary><div className="mt-3 max-w-sm"><ActionForm action={linkParentAction} submit="Link"><Field label="Parent's NRIC"><input name="parent_nric" className={inputCls} placeholder="S1234567A" required /></Field><Field label="Relationship"><select name="relationship" className={inputCls}><option>son</option><option>daughter</option><option>spouse</option><option>grandchild</option><option>caregiver</option></select></Field></ActionForm></div></details>
   </div>;
 }

@@ -40,3 +40,16 @@ export const DIM_ICON: Record<Dim, string> = {
 export const dimPhrase = (d: Dim, level: number) => QUESTIONS[d].opts[level - 1];
 export const dimName = (d: Dim) => DIM_LABEL[d];
 export { DIMS };
+
+export const DIM_SHORT: Record<Dim, string> = { mo: "Walking", sc: "Washing and dressing", ua: "Usual activities", pd: "Pain or discomfort", ad: "Mood" };
+/** One line per dimension that changed since last time, biggest change first, at most `max`. */
+export function changedLines(cur: Survey, prev: Survey | null, max = 3): string[] {
+  if (!prev) return [];
+  return DIMS.map((d) => ({ d, diff: prev[d] - cur[d] })).filter((x) => x.diff !== 0)
+    .sort((a, b) => Math.abs(b.diff) - Math.abs(a.diff)).slice(0, max)
+    .map(({ d, diff }) => `${DIM_SHORT[d]}: ${diff === 1 ? "a little better" : diff > 1 ? "better" : diff === -1 ? "a little worse" : "worse"}`);
+}
+export function painLine(cur: Survey, prev: Survey | null): string {
+  const cmp = prev ? (cur.pain < prev.pain ? ", less than last time" : cur.pain > prev.pain ? ", more than last time" : ", same as last time") : "";
+  return `Pain ${cur.pain} out of 10${cmp}`;
+}
