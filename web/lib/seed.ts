@@ -28,7 +28,7 @@ export async function seedIfEmpty(q: Q) {
   await ins("hod", "H001", "Dr Lim Hwee Boon (HOD)", { phone: "+6590000005" });
 
   // named demo family
-  const dad = await ins("patient", "S1234567A", "Tan Wei Ming", { phone: "+6591234567", gender: "MALE", birthday: "1962-03-14", address: "Blk 123 Tampines St 11 #05-123" });
+  const dad = await ins("patient", "S1234567A", "Tan Wei Ming", { phone: "+6593688913", gender: "MALE", birthday: "1962-03-14", address: "Blk 123 Tampines St 11 #05-123" });
   const mum = await ins("patient", "S2345678B", "Lim Siew Hoon", { phone: "+6592345678", gender: "FEMALE", birthday: "1958-11-02", address: "Blk 45 Bedok North Ave 3 #08-456" });
   const daughter = await ins("caregiver", "S3456789C", "Tan Mei Ling", { phone: "+6593456789", gender: "FEMALE", birthday: "1990-07-21", address: "Blk 123 Tampines St 11 #05-123" });
   await q("INSERT INTO care_links(caregiver_id, patient_id, relationship, status, responded_at) VALUES ($1,$2,'daughter','accepted',now())", [daughter, mum]);

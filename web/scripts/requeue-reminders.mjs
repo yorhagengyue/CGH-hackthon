@@ -1,4 +1,4 @@
-// One-off: replace old appointment reminders with the questionnaire reminders (7d / 1d / 2h) for every future appointment.
+// One-off: replace queued reminders with the questionnaire reminders (day before 09:00 + 2 hours before) for every future appointment.
 import { readFileSync } from "node:fs";
 import pg from "pg";
 const envFile = (() => { try { return readFileSync(new URL("../.env.local", import.meta.url), "utf8"); } catch { return ""; } })();
@@ -16,8 +16,9 @@ try {
     const when = fmt(ap.scheduled_at);
     const msg = `CGH Physiotherapy: you have not yet done your questionnaire for your visit on ${when}. Please complete it before the visit: ${base}/survey?appt=${ap.id}`;
     const cg = await q("SELECT caregiver_id FROM care_links WHERE patient_id = $1 AND status = 'accepted'", [ap.patient_id]);
-    for (const [kind, hours] of [["reminder_7d", 168], ["reminder_1d", 24], ["reminder_2h", 2]]) {
-      const sendAt = new Date(new Date(ap.scheduled_at).getTime() - hours * 3600 * 1000); if (hours >= 24) sendAt.setHours(9, 0, 0, 0);
+    const sg = new Date(new Date(ap.scheduled_at).toLocaleString("en-US", { timeZone: "Asia/Singapore" }));
+    const dayBefore = new Date(`${new Date(sg.getTime() - 86400000).toLocaleDateString("en-CA")}T09:00:00+08:00`);
+    for (const [kind, sendAt] of [["reminder_1d", dayBefore], ["reminder_2h", new Date(new Date(ap.scheduled_at).getTime() - 2 * 3600 * 1000)]]) {
       await q(`INSERT INTO notifications(user_id, appointment_id, channel, kind, message, send_at) VALUES ($1,$2,'sms',$3,$4,$5)`, [ap.patient_id, ap.id, kind, msg, sendAt.toISOString()]); n++;
       for (const c of cg) { await q(`INSERT INTO notifications(user_id, appointment_id, channel, kind, message, send_at) VALUES ($1,$2,'sms',$3,$4,$5)`, [c.caregiver_id, ap.id, kind, `[For your parent] ${msg}`, sendAt.toISOString()]); n++; }
     }

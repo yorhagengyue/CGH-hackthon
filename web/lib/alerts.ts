@@ -4,7 +4,6 @@ import { DIMS, DIM_LABEL, LEVEL_LABEL, type Dim } from "./eq5d";
 import type { Survey } from "./data";
 import { verdict } from "./plain";
 import { notifyApp } from "./notify";
-import { sendPushToUser } from "./push";
 
 type Q = (sql: string, params?: unknown[]) => Promise<Record<string, unknown>[]>;
 
@@ -31,7 +30,6 @@ export async function raiseAlert(q: Q, surveyId: number, patientId: number, appo
   for (const uid of targets) {
     await notifyApp(q, uid, "alert", msg, appointmentId);
     await q(`INSERT INTO notifications(user_id, appointment_id, channel, kind, message, send_at) VALUES ($1,$2,'sms','alert',$3,now())`, [uid, appointmentId, `CGH Physio alert: ${msg}`]);
-    await sendPushToUser(q, uid, "Needs attention", msg, "/physio").catch(() => undefined);
   }
 }
 

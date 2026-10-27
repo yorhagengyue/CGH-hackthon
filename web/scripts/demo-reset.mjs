@@ -47,6 +47,8 @@ try {
   const del = await q(`DELETE FROM surveys WHERE patient_id = ANY($1) AND (submitted_at >= ${SOD} OR appointment_id IN (SELECT id FROM appointments WHERE patient_id = ANY($1) AND scheduled_at >= ${SOD} AND scheduled_at < ${SOD} + interval '1 day')) RETURNING id`, [[dad, mum]]);
   // alerts raised by the parents' demo questionnaires (and their SMS copies) go too, so the staff inbox matches the data
   await q(`DELETE FROM notifications WHERE kind = 'alert' AND appointment_id IN (SELECT id FROM appointments WHERE patient_id = ANY($1) AND scheduled_at >= ${SOD})`, [[dad, mum]]);
+  // the demo father's phone is the presenter's, so reminders and alerts land on a real handset
+  await q("UPDATE users SET phone = '+6593688913' WHERE id = $1", [dad]);
   // daughter: stop acting as anyone, drop stale allowed/declined notices
   await q("UPDATE sessions SET acting_patient_id = NULL WHERE user_id = $1", [dau]);
   await q("DELETE FROM notifications WHERE user_id = $1 AND kind IN ('link_accepted','link_declined')", [dau]);

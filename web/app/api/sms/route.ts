@@ -1,9 +1,26 @@
-// Cron endpoint: GET /api/sms?key=CRON_SECRET  -> sends everything due. Vercel Cron can hit this hourly.
+// Dispatcher for Vercel Cron and manual calls. Requires `Authorization: Bearer <CRON_SECRET>` (Vercel Cron sends it automatically).
+import { timingSafeEqual } from "node:crypto";
 import { db } from "@/lib/db";
 import { dispatchDue } from "@/lib/notify";
-export async function GET(req: Request) {
-  const key = new URL(req.url).searchParams.get("key") ?? req.headers.get("authorization")?.replace("Bearer ", "");
-  if (process.env.CRON_SECRET && key !== process.env.CRON_SECRET) return new Response("forbidden", { status: 403 });
-  const n = await dispatchDue(await db());
-  return Response.json({ sent: n });
+
+function isAuthorized(request: Request) {
+  const secret = process.env.CRON_SECRET;
+  const authorization = request.headers.get("authorization");
+  if (!secret || !authorization?.startsWith("Bearer ")) return false;
+  const provided = Buffer.from(authorization.slice("Bearer ".length)), expected = Buffer.from(secret);
+  return provided.length === expected.length && timingSafeEqual(provided, expected);
 }
+
+async function dispatch(request: Request) {
+  if (!process.env.CRON_SECRET) return Response.json({ error: "SMS dispatcher is not configured." }, { status: 503 });
+  if (!isAuthorized(request)) return Response.json({ error: "Unauthorized." }, { status: 401 });
+  try {
+    const result = await dispatchDue(await db());
+    return Response.json(result, { status: result.failed > 0 ? 502 : 200 });
+  } catch (error) {
+    console.error("SMS dispatcher failed:", error);
+    return Response.json({ error: (error as Error).message || "SMS dispatcher failed." }, { status: 500 });
+  }
+}
+export const GET = dispatch;
+export const POST = dispatch;
