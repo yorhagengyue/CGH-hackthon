@@ -1,44 +1,75 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 export type SurveyPoint = { id: number; date: string; label: string; mo: number; sc: number; ua: number; pd: number; ad: number; pain: number; health: number; filled_by: string };
 type Series = "pain" | "health" | "dims";
-const DIM: { key: "mo" | "sc" | "ua" | "pd" | "ad"; name: string; color: string }[] = [
+type DimKey = "mo" | "sc" | "ua" | "pd" | "ad";
+const DIM: { key: DimKey; name: string; color: string }[] = [
   { key: "mo", name: "Walking", color: "#0070b8" }, { key: "sc", name: "Washing and dressing", color: "#28a8e0" }, { key: "ua", name: "Usual activities", color: "#7c3aed" },
   { key: "pd", name: "Pain or discomfort", color: "#b91c1c" }, { key: "ad", name: "Mood", color: "#b45309" },
 ];
+const LEVEL = ["", "No problems", "Slight problems", "Moderate problems", "Severe problems", "Unable / extreme"];
+const LEVEL_SHORT = ["", "None", "Slight", "Moderate", "Severe", "Extreme"];
 const EXPLAIN: Record<Series, string> = {
   pain: "Each time you answered, you rated your pain from 0 (no pain) to 10 (the worst pain you can imagine). Lower is better.",
   health: "Each time you answered, you rated your overall health from 0 (worst) to 100 (best). Higher is better.",
-  dims: "For each of the five questions you chose a level from 1 (no problems) to 5 (unable / extreme problems). Lower is better.",
+  dims: "For each of the five questions you chose from 'no problems' to 'unable / extreme'. Lower on the chart is better. Tap a question in the list to look at it on its own.",
 };
 
 export function ProgressTrend({ points }: { points: SurveyPoint[] }) {
   const [series, setSeries] = useState<Series>("pain");
-  // Draw at the container's real pixel width so text stays readable on a phone (no viewBox scaling).
+  const [focus, setFocus] = useState<DimKey | null>(null);
+  const [hover, setHover] = useState<number | null>(null);
   const box = useRef<HTMLDivElement>(null);
   const [W, setW] = useState(640);
-  useEffect(() => { const el = box.current; if (!el) return; const ro = new ResizeObserver(() => setW(Math.max(300, Math.floor(el.clientWidth)))); ro.observe(el); setW(Math.max(300, Math.floor(el.clientWidth))); return () => ro.disconnect(); }, []);
-  const H = W < 640 ? 220 : 260, pl = 40, pr = 16, pt = 30, pb = 34;
+  useEffect(() => { const el = box.current; if (!el) return; const set = () => setW(Math.max(300, Math.floor(el.clientWidth))); const ro = new ResizeObserver(set); ro.observe(el); set(); return () => ro.disconnect(); }, []);
+  useEffect(() => { setHover(null); }, [series, focus]);
+
+  const H = W < 640 ? 220 : 260, pl = series === "dims" ? 64 : 40, pr = 16, pt = 30, pb = 34;
   const max = series === "pain" ? 10 : series === "health" ? 100 : 5, min = series === "dims" ? 1 : 0;
   const ticks = series === "pain" ? [0, 2, 4, 6, 8, 10] : series === "health" ? [0, 25, 50, 75, 100] : [1, 2, 3, 4, 5];
   const xs = (i: number) => points.length === 1 ? (pl + W - pr) / 2 : pl + (i * (W - pl - pr)) / (points.length - 1);
   const ys = (y: number) => pt + (1 - (y - min) / (max - min)) * (H - pt - pb);
-  const lines: { name: string; color: string; vals: number[] }[] = series === "pain" ? [{ name: "Pain", color: "#b91c1c", vals: points.map((p) => p.pain) }]
-    : series === "health" ? [{ name: "Health today", color: "#0070b8", vals: points.map((p) => p.health) }]
-    : DIM.map((d) => ({ name: d.name, color: d.color, vals: points.map((p) => p[d.key]) }));
-  const tab = (k: Series, label: string) => <button type="button" onClick={() => setSeries(k)} className={`px-3 py-1.5 rounded-lg text-sm font-bold ${series === k ? "bg-cgh-blue text-white" : "bg-white border border-slate-300 text-slate-700"}`}>{label}</button>;
+  const lines = useMemo(() => series === "pain" ? [{ key: "pain" as const, name: "Pain", color: "#b91c1c", vals: points.map((p) => p.pain) }]
+    : series === "health" ? [{ key: "health" as const, name: "Health today", color: "#0070b8", vals: points.map((p) => p.health) }]
+    : DIM.map((d) => ({ key: d.key, name: d.name, color: d.color, vals: points.map((p) => p[d.key]) })), [series, points]);
+  const main = lines.length === 1 ? lines[0] : lines.find((l) => l.key === focus) ?? null; // the line that gets labels + area
+  const lowerBetter = series !== "health";
+  const first = main?.vals[0], last = main?.vals.at(-1);
+  const delta = main && first !== undefined && last !== undefined && points.length > 1 ? last - first : null;
+  const trendWord = delta == null ? "" : delta === 0 ? "No change" : (lowerBetter ? delta < 0 : delta > 0) ? "Better" : "Worse";
+  const fmtVal = (v: number) => series === "dims" ? LEVEL[v] : series === "pain" ? `${v} out of 10` : `${v} out of 100`;
+  const gid = `area-${series}-${focus ?? "all"}`;
+  const tab = (k: Series, label: string) => <button type="button" onClick={() => { setSeries(k); setFocus(null); }} className={`px-3 py-1.5 rounded-lg text-sm font-bold transition ${series === k ? "bg-cgh-blue text-white" : "bg-white border border-slate-300 text-slate-700 hover:border-cgh-blue"}`}>{label}</button>;
+
+  // nearest point to the pointer (for touch + mouse)
+  const onMove = (e: React.PointerEvent<SVGSVGElement>) => { if (!points.length) return; const r = e.currentTarget.getBoundingClientRect(); const x = e.clientX - r.left; let best = 0; for (let i = 1; i < points.length; i++) if (Math.abs(xs(i) - x) < Math.abs(xs(best) - x)) best = i; setHover(best); };
+
   return <div className="bg-white rounded-2xl shadow-card p-5">
-    <div className="flex flex-wrap items-center gap-2">{tab("pain", "Pain (0–10)")}{tab("health", "Health today (0–100)")}{tab("dims", "The five questions (1–5)")}
+    <div className="flex flex-wrap items-center gap-2">{tab("pain", "Pain (0–10)")}{tab("health", "Health today (0–100)")}{tab("dims", "The five questions")}
       <details className="ml-auto text-sm"><summary className="cursor-pointer text-cgh-blue font-bold list-none">What is this?</summary><p className="text-slate-600 mt-1 max-w-sm">{EXPLAIN[series]}</p></details></div>
-    <div ref={box} className="w-full">{points.length === 0 ? <p className="text-slate-500 mt-4">Your first questionnaire will appear here.</p> : <svg viewBox={`0 0 ${W} ${H}`} width={W} height={H} className="mt-3 block max-w-full">
-      {ticks.map((t) => <g key={t}><line x1={pl} x2={W - pr} y1={ys(t)} y2={ys(t)} stroke="#e2e8f0" /><text x={pl - 8} y={ys(t) + 4} fontSize="11" textAnchor="end" fill="#64748b">{t}</text></g>)}
-      {lines.map((l) => <g key={l.name}>
-        <path d={l.vals.map((v, i) => `${i ? "L" : "M"}${xs(i)},${ys(v)}`).join(" ")} fill="none" stroke={l.color} strokeWidth={2.5} strokeLinejoin="round" />
-        {l.vals.map((v, i) => <g key={i}><circle cx={xs(i)} cy={ys(v)} r={lines.length > 1 ? 4 : 5} fill="#fff" stroke={l.color} strokeWidth="2.5" />{(lines.length === 1 || i === l.vals.length - 1) && <text x={xs(i)} y={ys(v) - 11} fontSize="13" fontWeight="800" textAnchor="middle" fill={l.color}>{v}</text>}</g>)}
-      </g>)}
-      {points.map((p, i) => <text key={p.id} x={xs(i)} y={H - 12} fontSize="11" textAnchor="middle" fill="#64748b">{p.label}</text>)}
-    </svg>}</div>
-    {lines.length > 1 && <div className="flex flex-wrap gap-3 mt-2 text-xs">{lines.map((l) => <span key={l.name} className="inline-flex items-center gap-1.5"><i className="w-3 h-3 rounded-full" style={{ background: l.color }} />{l.name}</span>)}</div>}
+    {main && delta != null && <div className="mt-3 flex items-center gap-2 text-sm"><span className={`px-2.5 py-1 rounded-full font-bold ${trendWord === "Better" ? "bg-ok-bg text-ok" : trendWord === "Worse" ? "bg-warn-bg text-warn" : "bg-slate-100 text-slate-600"}`}>{trendWord}</span><span className="text-slate-600">{main.name}: {series === "dims" ? `${LEVEL[first!]} → ${LEVEL[last!]}` : `${first} → ${last}`} since {points[0].label}</span></div>}
+    <div ref={box} className="w-full relative">{points.length === 0 ? <p className="text-slate-500 mt-4">Your first questionnaire will appear here.</p> : <>
+      <svg viewBox={`0 0 ${W} ${H}`} width={W} height={H} className="mt-3 block max-w-full touch-none select-none" onPointerMove={onMove} onPointerDown={onMove} onPointerLeave={() => setHover(null)}>
+        <defs><linearGradient id={gid} x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stopColor={main?.color ?? "#0070b8"} stopOpacity="0.18" /><stop offset="100%" stopColor={main?.color ?? "#0070b8"} stopOpacity="0" /></linearGradient></defs>
+        {ticks.map((t) => <g key={t}><line x1={pl} x2={W - pr} y1={ys(t)} y2={ys(t)} stroke="#e2e8f0" /><text x={pl - 8} y={ys(t) + 4} fontSize="11" textAnchor="end" fill="#64748b">{series === "dims" ? LEVEL_SHORT[t] : t}</text></g>)}
+        {hover != null && <line x1={xs(hover)} x2={xs(hover)} y1={pt - 6} y2={H - pb} stroke="#94a3b8" strokeDasharray="3 3" />}
+        {main && points.length > 1 && <path d={`${main.vals.map((v, i) => `${i ? "L" : "M"}${xs(i)},${ys(v)}`).join(" ")} L${xs(points.length - 1)},${ys(min)} L${xs(0)},${ys(min)} Z`} fill={`url(#${gid})`} />}
+        {lines.map((l) => { const dim = main && l !== main; const d = l.vals.map((v, i) => `${i ? "L" : "M"}${xs(i)},${ys(v)}`).join(" "); return <g key={l.key} opacity={dim ? 0.25 : 1} style={{ transition: "opacity .2s" }}>
+          <path d={d} fill="none" stroke={l.color} strokeWidth={2.5} strokeLinejoin="round" strokeLinecap="round" pathLength={1} className="trend-draw" />
+          {l.vals.map((v, i) => { const on = hover === i; return <g key={i}><circle cx={xs(i)} cy={ys(v)} r={on ? 7 : lines.length > 1 && !main ? 4 : 5} fill={on ? l.color : "#fff"} stroke={l.color} strokeWidth="2.5" style={{ transition: "r .15s" }} />
+            {series !== "dims" && l === main && hover !== i && <text x={xs(i)} y={ys(v) - 11} fontSize="13" fontWeight="800" textAnchor="middle" fill={l.color}>{v}</text>}</g>; })}
+        </g>; })}
+        {points.map((p, i) => <text key={p.id} x={xs(i)} y={H - 12} fontSize="11" fontWeight={hover === i ? 800 : 400} textAnchor="middle" fill={hover === i ? "#14263a" : "#64748b"}>{p.label}</text>)}
+        {lines.map((l) => <rect key={`hit-${l.key}`} x={pl} y={pt - 10} width={W - pl - pr} height={H - pt - pb + 10} fill="transparent" />)}
+      </svg>
+      {hover != null && <div className="pointer-events-none absolute -translate-x-1/2 bg-cgh-ink text-white text-xs rounded-lg px-3 py-2 shadow-lg" style={{ left: Math.min(Math.max(xs(hover), 70), W - 70), top: 0 }}>
+        <div className="font-bold">{points[hover].date}</div>
+        {lines.filter((l) => !main || l === main).map((l) => <div key={l.key}>{lines.length > 1 ? `${l.name}: ` : ""}{fmtVal(l.vals[hover])}{hover > 0 && (() => { const d = l.vals[hover] - l.vals[hover - 1]; return d === 0 ? " · same as before" : (lowerBetter ? d < 0 : d > 0) ? " · better than before" : " · worse than before"; })()}</div>)}
+        {!main && lines.length > 1 && <div className="text-slate-300 mt-0.5">Tap a question below to see it alone</div>}
+      </div>}
+    </>}</div>
+    {lines.length > 1 && <div className="flex flex-wrap gap-2 mt-3">{lines.map((l) => <button type="button" key={l.key} onClick={() => setFocus(focus === l.key ? null : (l.key as DimKey))} className={`inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 rounded-full border transition ${focus === l.key ? "border-transparent text-white" : "border-slate-200 text-slate-700 bg-white"}`} style={focus === l.key ? { background: l.color } : undefined}><i className="w-2.5 h-2.5 rounded-full" style={{ background: focus === l.key ? "#fff" : l.color }} />{l.name}</button>)}{focus && <button type="button" onClick={() => setFocus(null)} className="text-xs text-cgh-blue font-bold px-2">Show all</button>}</div>}
+    <style>{`.trend-draw{stroke-dasharray:1;stroke-dashoffset:1;animation:trend-draw .8s ease-out forwards}@keyframes trend-draw{to{stroke-dashoffset:0}}@media (prefers-reduced-motion:reduce){.trend-draw{animation:none;stroke-dashoffset:0}}`}</style>
   </div>;
 }

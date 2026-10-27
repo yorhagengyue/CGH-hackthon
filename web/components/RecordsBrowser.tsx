@@ -26,7 +26,7 @@ export function RecordsBrowser({ points }: { points: SurveyPoint[] }) {
     <div className="divide-y divide-slate-100 mt-3">
       {ROWS.map((r) => <div key={r.key} className="py-2.5">
         <div className="flex items-center justify-between"><span className="text-slate-600">{r.name}</span><Mark v={cmp(p[r.key], prev?.[r.key])} /></div>
-        <div className="font-semibold text-cgh-ink whitespace-nowrap">{LEVEL[p[r.key]]} <span className="text-slate-400 font-normal">·</span> <span className="tabular-nums">{p[r.key]}</span></div>
+        <div className="font-semibold text-cgh-ink">{LEVEL[p[r.key]]}</div>
       </div>)}
       <div className="py-2.5 flex items-center justify-between"><span className="font-semibold text-cgh-ink whitespace-nowrap">Pain <span className="text-slate-400 font-normal">·</span> {p.pain} out of 10</span><Mark v={cmp(p.pain, prev?.pain)} /></div>
       <div className="py-2.5 flex items-center justify-between"><span className="font-semibold text-cgh-ink whitespace-nowrap">Health today <span className="text-slate-400 font-normal">·</span> {p.health} out of 100</span><Mark v={cmp(p.health, prev?.health, false)} /></div>
