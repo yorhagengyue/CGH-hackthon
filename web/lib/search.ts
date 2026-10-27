@@ -21,7 +21,8 @@ export async function searchPatients(p: SearchParams): Promise<SearchRow[]> {
     where.push(`(u.login_id = ${nric} OR r.diagnosis ILIKE ${like} OR r.region ILIKE ${like} OR u.name ILIKE ${like}${code ? ` OR r.diagnosis LIKE ${code}` : ""})`);
   }
   if (p.region) where.push(`r.region = ${add(p.region)}`);
-  if (p.diagnosis) where.push(`r.diagnosis ILIKE ${add(`%${p.diagnosis}%`)}`);
+  if (p.diagnosis) { const d = p.diagnosis.trim(); const like = add(`%${d}%`); const code = /^\d+$/.test(d) ? add(`${d}%`) : null;
+    where.push(`(r.diagnosis ILIKE ${like} OR r.region ILIKE ${like}${code ? ` OR r.diagnosis LIKE ${code}` : ""})`); }
   if (p.min_age != null) where.push(`u.birthday <= (now() - (${add(p.min_age)} || ' years')::interval)`);
   if (p.max_age != null) where.push(`u.birthday > (now() - (${add(p.max_age + 1)} || ' years')::interval)`);
   if (p.postop_min_months != null) where.push(`r.surgery_date IS NOT NULL AND r.surgery_date <= (now() - (${add(p.postop_min_months)} || ' months')::interval)`);
