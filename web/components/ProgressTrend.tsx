@@ -17,7 +17,7 @@ const EXPLAIN: Record<Series, string> = {
 };
 
 export function ProgressTrend({ points }: { points: SurveyPoint[] }) {
-  const [series, setSeries] = useState<Series>("pain");
+  const [series, setSeries] = useState<Series>("health");
   const [focus, setFocus] = useState<DimKey | null>(null);
   const [hover, setHover] = useState<number | null>(null);
   const box = useRef<HTMLDivElement>(null);
@@ -31,7 +31,7 @@ export function ProgressTrend({ points }: { points: SurveyPoint[] }) {
   const xs = (i: number) => points.length === 1 ? (pl + W - pr) / 2 : pl + (i * (W - pl - pr)) / (points.length - 1);
   const ys = (y: number) => pt + (1 - (y - min) / (max - min)) * (H - pt - pb);
   const lines = useMemo(() => series === "pain" ? [{ key: "pain" as const, name: "Pain", color: "#b91c1c", vals: points.map((p) => p.pain) }]
-    : series === "health" ? [{ key: "health" as const, name: "Health today", color: "#0070b8", vals: points.map((p) => p.health) }]
+    : series === "health" ? [{ key: "health" as const, name: "Overall health", color: "#0070b8", vals: points.map((p) => p.health) }]
     : DIM.map((d) => ({ key: d.key, name: d.name, color: d.color, vals: points.map((p) => p[d.key]) })), [series, points]);
   const main = lines.length === 1 ? lines[0] : lines.find((l) => l.key === focus) ?? null; // the line that gets labels + area
   const lowerBetter = series !== "health";
@@ -46,7 +46,7 @@ export function ProgressTrend({ points }: { points: SurveyPoint[] }) {
   const onMove = (e: React.PointerEvent<SVGSVGElement>) => { if (!points.length) return; const r = e.currentTarget.getBoundingClientRect(); const x = e.clientX - r.left; let best = 0; for (let i = 1; i < points.length; i++) if (Math.abs(xs(i) - x) < Math.abs(xs(best) - x)) best = i; setHover(best); };
 
   return <div className="bg-white rounded-2xl shadow-card p-5">
-    <div className="flex flex-wrap items-center gap-2">{tab("pain", "Pain (0–10)")}{tab("health", "Health today (0–100)")}{tab("dims", "The five questions")}
+    <div className="flex flex-wrap items-center gap-2">{tab("health", "Overall health (0–100)")}{tab("dims", "The five questions (1–5)")}{tab("pain", "Pain (0–10)")}
       <details className="ml-auto text-sm"><summary className="cursor-pointer text-cgh-blue font-bold list-none">What is this?</summary><p className="text-slate-600 mt-1 max-w-sm">{EXPLAIN[series]}</p></details></div>
     {main && delta != null && <div className="mt-3 flex items-center gap-2 text-sm"><span className={`px-2.5 py-1 rounded-full font-bold ${trendWord === "Better" ? "bg-ok-bg text-ok" : trendWord === "Worse" ? "bg-warn-bg text-warn" : "bg-slate-100 text-slate-600"}`}>{trendWord}</span><span className="text-slate-600">{main.name}: {series === "dims" ? `${LEVEL[first!]} → ${LEVEL[last!]}` : `${first} → ${last}`} since {points[0].label}</span></div>}
     <div ref={box} className="w-full relative">{points.length === 0 ? <p className="text-slate-500 mt-4">Your first questionnaire will appear here.</p> : <>
