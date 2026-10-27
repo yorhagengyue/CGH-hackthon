@@ -1,5 +1,5 @@
 import { clinicalNote, levels, profileStr, patientBundle, flagsFor } from "@/lib/data";
-import { DIMS, DIM_LABEL, LEVEL_LABEL } from "@/lib/eq5d";
+import { DIMS, DIM_LABEL, LEVEL_LABEL, VALUE_SET } from "@/lib/eq5d";
 import { Arrow, Card, LV_BG, Pill, ProfileBadge, Stat, TrendChart, age, fmtD, fmtDT, startOfTodaySG } from "./ui";
 import { CopyButton } from "./CopyButton";
 import { ActionForm, Field, inputCls } from "./Form";
@@ -21,10 +21,15 @@ export async function PatientDetail({ patientId, staff = false, self = false }: 
         {!self && <div className="mb-3"><div className="text-lg font-bold">{patient.name}</div><div className="text-slate-600 text-sm">{patient.login_id.slice(0, 1)}****{patient.login_id.slice(-4)} · {patient.gender ?? "-"} · {age(patient.birthday) ?? "-"} y · {patient.phone ?? "no phone"}{caregivers.length > 0 && <> · caregivers: {caregivers.map((c) => `${c.name} (${c.relationship})`).join(", ")}</>}</div></div>}
         {cur ? <>
           <div className="grid grid-cols-3 gap-3 mb-4">
-            <Stat value={cur.pain} unit="/10" label={<>Pain {prev && `(was ${prev.pain})`}</>} arrow={fl.pain} />
-            <Stat value={cur.index_value.toFixed(3)} label={<>EQ-5D index {prev && `(was ${prev.index_value.toFixed(3)})`}</>} arrow={fl.index} />
-            <Stat value={cur.eq_vas} label={<>EQ-VAS {prev && `(was ${prev.eq_vas})`}</>} arrow={fl.vas} />
+            <Stat value={cur.pain} unit="/10" label="Pain NRS" change={fl.pain} />
+            <Stat value={cur.index_value.toFixed(3)} label="EQ-5D-5L index" change={fl.index} />
+            <Stat value={cur.eq_vas} label="EQ-VAS" change={fl.vas} />
           </div>
+          <ul className="text-xs text-slate-500 mb-4 space-y-0.5 list-disc pl-4">
+            <li>Pain NRS 0–10, lower is better{prev && <> · was {prev.pain} · {cur.pain - prev.pain >= 0 ? "+" : ""}{cur.pain - prev.pain}{fl.pain === "stable" ? ", not clinically meaningful" : ", clinically meaningful"}</>}</li>
+            <li>EQ-5D-5L index 0–1, higher is better ({VALUE_SET} value set){prev && <> · was {prev.index_value.toFixed(2)} · {cur.index_value - prev.index_value >= 0 ? "+" : ""}{(cur.index_value - prev.index_value).toFixed(2)}{fl.index === "stable" ? ", not clinically meaningful" : ", clinically meaningful"}</>}</li>
+            <li>EQ-VAS 0–100, patient's own rating of their health, higher is better{prev && <> · was {prev.eq_vas} · {cur.eq_vas - prev.eq_vas >= 0 ? "+" : ""}{cur.eq_vas - prev.eq_vas}{fl.vas === "stable" ? ", not clinically meaningful" : ", clinically meaningful"}</>}</li>
+          </ul>
           <table className="tbl mb-2"><thead><tr><th>Dimension</th><th>Latest · {fmtD(cur.submitted_at)}</th><th>{prev ? <>Previous · {fmtD(prev.submitted_at)}</> : "Previous"}</th></tr></thead><tbody>
             {DIMS.map((d) => <tr key={d} ><td>{DIM_LABEL[d]}</td><td><span className={`inline-block w-6 text-center rounded font-bold ${LV_BG[cur[d]]}`}>{cur[d]}</span> <span className="text-slate-500">{LEVEL_LABEL[cur[d]]}</span></td><td>{prev ? <span className={`inline-block w-6 text-center rounded font-bold ${LV_BG[prev[d]]}`}>{prev[d]}</span> : "—"}</td></tr>)}
           </tbody></table>

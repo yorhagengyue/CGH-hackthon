@@ -22,8 +22,9 @@ export const Pill = ({ ok, children, tone }: { ok?: boolean; children: React.Rea
   return <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-bold ${cls}`}>{children}</span>;
 };
 
-export const Stat = ({ value, unit, label, arrow }: { value: React.ReactNode; unit?: string; label: React.ReactNode; arrow?: string }) =>
-  <div className="rounded-xl bg-cgh-mist/60 px-4 py-3"><div className="text-[26px] font-extrabold tabular-nums leading-none text-cgh-ink">{value}{unit && <span className="text-sm font-semibold text-slate-400 ml-0.5">{unit}</span>} {arrow && <Arrow f={arrow} />}</div><div className="text-xs text-slate-500 mt-1.5">{label}</div></div>;
+const CHANGE_TEXT: Record<string, [string, string]> = { improved: ["Improved", "text-ok"], worsened: ["Worse", "text-danger"], stable: ["No change", "text-slate-400"] };
+export const Stat = ({ value, unit, label, change }: { value: React.ReactNode; unit?: string; label: React.ReactNode; change?: string }) =>
+  <div className="rounded-xl bg-cgh-mist/60 px-4 py-3"><div className="text-[26px] font-extrabold tabular-nums leading-none text-cgh-ink">{value}{unit && <span className="text-sm font-semibold text-slate-400 ml-0.5">{unit}</span>}</div><div className="text-xs text-slate-500 mt-1.5">{label}{change && CHANGE_TEXT[change] && <span className={`ml-1.5 font-bold ${CHANGE_TEXT[change][1]}`}>{CHANGE_TEXT[change][0]}</span>}</div></div>;
 
 export const Btn = ({ children, primary = false, className = "", ...rest }: React.ButtonHTMLAttributes<HTMLButtonElement> & { primary?: boolean }) =>
   <button {...rest} className={`px-4 py-2 rounded-lg text-sm font-semibold transition disabled:opacity-50 ${primary ? "bg-cgh-blue text-white hover:bg-cgh-blue-dark" : "bg-white border border-slate-300 text-slate-700 hover:border-cgh-blue hover:text-cgh-blue"} ${className}`}>{children}</button>;
