@@ -16,7 +16,7 @@ export async function patientBundle(patientId: number) {
   const appointments = await q<Appt>(`SELECT a.id, a.referral_id, a.scheduled_at::text, a.kind, a.status, p.name AS physio_name, s.id AS survey_id
     FROM appointments a LEFT JOIN users p ON p.id = a.physio_id LEFT JOIN surveys s ON s.appointment_id = a.id WHERE a.patient_id = $1 ORDER BY a.scheduled_at`, [patientId]);
   const surveys = await q<Survey>(`SELECT s.*, s.submitted_at::text, u.name AS filled_by_name FROM surveys s JOIN users u ON u.id = s.filled_by WHERE s.patient_id = $1 ORDER BY s.submitted_at`, [patientId]);
-  const caregivers = await q<{ id: number; name: string; relationship: string; phone: string | null }>(`SELECT u.id, u.name, c.relationship, u.phone FROM care_links c JOIN users u ON u.id = c.caregiver_id WHERE c.patient_id = $1`, [patientId]);
+  const caregivers = await q<{ id: number; name: string; relationship: string; phone: string | null; status: string }>(`SELECT u.id, u.name, c.relationship, u.phone, c.status FROM care_links c JOIN users u ON u.id = c.caregiver_id WHERE c.patient_id = $1`, [patientId]);
   return { patient, referrals, appointments, surveys, caregivers };
 }
 

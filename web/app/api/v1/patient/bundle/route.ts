@@ -1,9 +1,8 @@
 import { db } from "@/lib/db";
-import { error, isResponse, json, patientDetail, requireApi, viewedPatientId } from "@/lib/api";
+import { error, isResponse, json, patientDetail, requireApi, requireViewedPatient } from "@/lib/api";
 export async function GET(req: Request) {
   const s = await requireApi(req, "patient", "caregiver"); if (isResponse(s)) return s;
-  const pid = viewedPatientId(s);
-  if (!pid) return error("Choose which parent you are helping first.", 409);
+  const pid = await requireViewedPatient(s); if (isResponse(pid)) return pid;
   const d = await patientDetail(pid, false);
   if (!d) return error("Patient not found.", 404);
   const q = await db();

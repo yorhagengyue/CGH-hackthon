@@ -8,8 +8,8 @@ import { actAsAction, linkParentAction } from "../actions";
 export default async function Caregiver() {
   const s = await session(); if (!s || s.user.role !== "caregiver") redirect("/login");
   const q = await db();
-  const parents = await q<{ id: number; name: string; relationship: string; next_at: string | null; next_id: number | null; next_done: number | null; n_surveys: number }>(
-    `SELECT u.id, u.name, c.relationship,
+  const parents = await q<{ id: number; name: string; relationship: string; status: string; next_at: string | null; next_id: number | null; next_done: number | null; n_surveys: number }>(
+    `SELECT u.id, u.name, c.relationship, c.status,
        (SELECT a.scheduled_at::text FROM appointments a WHERE a.patient_id = u.id AND a.status='scheduled' AND a.scheduled_at >= date_trunc('day', now() AT TIME ZONE 'Asia/Singapore') AT TIME ZONE 'Asia/Singapore' ORDER BY a.scheduled_at LIMIT 1) AS next_at,
        (SELECT a.id FROM appointments a WHERE a.patient_id = u.id AND a.status='scheduled' AND a.scheduled_at >= date_trunc('day', now() AT TIME ZONE 'Asia/Singapore') AT TIME ZONE 'Asia/Singapore' ORDER BY a.scheduled_at LIMIT 1) AS next_id,
        (SELECT s.id FROM appointments a JOIN surveys s ON s.appointment_id = a.id WHERE a.patient_id = u.id AND a.status='scheduled' AND a.scheduled_at >= date_trunc('day', now() AT TIME ZONE 'Asia/Singapore') AT TIME ZONE 'Asia/Singapore' ORDER BY a.scheduled_at LIMIT 1) AS next_done,
@@ -19,8 +19,8 @@ export default async function Caregiver() {
     <div className="grid md:grid-cols-2 gap-4">
       {parents.map((p) => <div key={p.id} className="bg-white rounded-2xl shadow-card p-6">
         <div className="text-[22px] font-extrabold text-cgh-ink leading-tight">{p.name}</div>
-        <div className="text-lg text-slate-700 mt-1">{p.next_at ? `Next visit ${fmtDT(p.next_at)}` : "No visit booked"}</div>
-        <div className="mt-5">{p.next_id && !p.next_done
+        <div className="text-lg text-slate-700 mt-1">{p.status !== "accepted" ? (p.status === "pending" ? `Waiting for ${p.name.split(" ")[0]} to approve` : `${p.name.split(" ")[0]} did not allow this`) : p.next_at ? `Next visit ${fmtDT(p.next_at)}` : "No visit booked"}</div>
+        <div className="mt-5">{p.status !== "accepted" ? <button disabled className="px-6 py-3 rounded-xl bg-slate-200 text-slate-400 font-bold cursor-not-allowed">{p.status === "pending" ? "Waiting for approval" : "Not allowed"}</button> : p.next_id && !p.next_done
           ? <form action={actAsAction}><input type="hidden" name="patient_id" value={p.id} /><input type="hidden" name="appt" value={p.next_id} /><button className="px-6 py-3 rounded-xl bg-cgh-blue text-white font-bold hover:bg-cgh-blue-dark">Fill questionnaire for {p.name.split(" ")[0]}</button></form>
           : <form action={actAsAction}><input type="hidden" name="patient_id" value={p.id} /><button className="px-6 py-3 rounded-xl bg-cgh-blue text-white font-bold hover:bg-cgh-blue-dark">See how {p.name.split(" ")[0]} is doing</button></form>}</div>
       </div>)}

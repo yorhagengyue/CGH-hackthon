@@ -69,6 +69,15 @@ export async function patientDetail(patientId: number, staff: boolean) {
   };
 }
 
+/** Caregivers may only see a parent who has accepted the link. Returns a 403 Response when not. */
+export async function requireViewedPatient(s: Session): Promise<number | Response> {
+  const pid = viewedPatientId(s);
+  if (!pid) return error("Choose which parent you are helping first.", 409);
+  if (s.user.role === "caregiver" && !(await one("SELECT 1 FROM care_links WHERE caregiver_id = $1 AND patient_id = $2 AND status = 'accepted'", [s.user.id, pid])))
+    return Response.json({ error: "Waiting for approval", message: "Waiting for approval", status: "pending" }, { status: 403 });
+  return pid;
+}
+
 export const mask = (id: string) => `${id.slice(0, 1)}****${id.slice(-4)}`;
 export const age = (b: string | null | undefined) => b ? Math.floor((Date.now() - new Date(b).getTime()) / 31557600000) : null;
 

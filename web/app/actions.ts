@@ -6,6 +6,7 @@ import { hashPassword, login, logout, session, setActingPatient } from "@/lib/au
 import { HOME } from "@/lib/roles";
 import { indexValue, regionFromDiagnosis, type Dim } from "@/lib/eq5d";
 import { dispatchDue, notifyApp, scheduleReminders } from "@/lib/notify";
+import { linkAccepted, requestLink, respondLink } from "@/lib/care";
 
 
 export async function loginAction(_: unknown, fd: FormData) {
@@ -29,7 +30,7 @@ export async function registerAction(_: unknown, fd: FormData) {
   if (role === "caregiver") {
     const parent = await one<{ id: number }>("SELECT id FROM users WHERE login_id = $1 AND role = 'patient'", [String(fd.get("parent_nric") ?? "").trim().toUpperCase()]);
     if (!parent) return { error: "Registered, but the patient NRIC was not found. Log in and link your parent from your page." };
-    await q("INSERT INTO care_links(caregiver_id, patient_id, relationship) VALUES ($1,$2,$3) ON CONFLICT DO NOTHING", [u.id, parent.id, String(fd.get("relationship") || "child")]);
+    await requestLink(q, { id: u.id as number, name: String(fd.get("name")) }, parent.id, String(fd.get("relationship") || "child"));
   }
   await login(nric, pw);
   redirect(HOME[role]);
@@ -40,17 +41,16 @@ export async function linkParentAction(_: unknown, fd: FormData) {
   const parent = await one<{ id: number; name: string }>("SELECT id, name FROM users WHERE login_id = $1 AND role = 'patient'", [String(fd.get("parent_nric") ?? "").trim().toUpperCase()]);
   if (!parent) return { error: "No patient with that NRIC." };
   const q = await db();
-  await q("INSERT INTO care_links(caregiver_id, patient_id, relationship) VALUES ($1,$2,$3) ON CONFLICT DO NOTHING", [s.user.id, parent.id, String(fd.get("relationship") || "child")]);
-  await notifyApp(q, parent.id, "link", `${s.user.name} (${fd.get("relationship")}) is now linked to your account and can help you with questionnaires.`);
+  const link = await requestLink(q, { id: s.user.id, name: s.user.name }, parent.id, String(fd.get("relationship") || "child"));
   revalidatePath("/caregiver");
-  return { ok: `Linked to ${parent.name}` };
+  return { ok: link.status === "accepted" ? `Already linked to ${parent.name}` : `Request sent. ${parent.name} has to allow it first.` };
 }
 
 export async function actAsAction(fd: FormData) {
   const s = await session(); if (!s || s.user.role !== "caregiver") return;
   const pid = Number(fd.get("patient_id"));
-  const ok = await one("SELECT 1 FROM care_links WHERE caregiver_id = $1 AND patient_id = $2", [s.user.id, pid]);
-  if (ok) await setActingPatient(pid);
+  if (!(await linkAccepted(s.user.id, pid))) redirect("/caregiver");
+  await setActingPatient(pid);
   const appt = fd.get("appt");
   redirect(appt ? `/survey?appt=${appt}` : "/patient");
 }
@@ -59,6 +59,7 @@ export async function submitSurveyAction(_: unknown, fd: FormData) {
   const s = await session(); if (!s) return { error: "Please log in." };
   const patientId = s.user.role === "caregiver" ? s.actingPatientId : s.user.id;
   if (!patientId || !["patient", "caregiver"].includes(s.user.role)) return { error: "Not allowed." };
+  if (s.user.role === "caregiver" && !(await linkAccepted(s.user.id, patientId))) return { error: "Your parent has not allowed you to help yet." };
   const lv = {} as Record<Dim, number>;
   for (const d of ["mo", "sc", "ua", "pd", "ad"] as Dim[]) { lv[d] = Number(fd.get(d)); if (!(lv[d] >= 1 && lv[d] <= 5)) return { error: "Please answer every question." }; }
   const vas = Number(fd.get("eq_vas")), pain = Number(fd.get("pain"));
@@ -125,4 +126,11 @@ export async function markReadAction() {
   const s = await session(); if (!s) return;
   const q = await db(); await q("UPDATE notifications SET read_at = now() WHERE user_id = $1 AND channel='app' AND read_at IS NULL", [s.user.id]);
   revalidatePath("/patient");
+}
+
+export async function respondLinkAction(fd: FormData) {
+  const s = await session(); if (!s || s.user.role !== "patient") return;
+  await respondLink(Number(fd.get("link_id")), s.user.id, String(fd.get("accept")) === "1");
+  revalidatePath("/patient");
+  redirect("/patient?tab=notifications");
 }

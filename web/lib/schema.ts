@@ -16,6 +16,8 @@ CREATE TABLE IF NOT EXISTS care_links (             -- caregiver (child) -> pati
   caregiver_id INT NOT NULL REFERENCES users(id),
   patient_id INT NOT NULL REFERENCES users(id),
   relationship TEXT NOT NULL,                        -- son, daughter, spouse ...
+  status TEXT NOT NULL DEFAULT 'accepted',           -- pending | accepted | declined (parent must allow)
+  responded_at TIMESTAMPTZ,
   UNIQUE (caregiver_id, patient_id)
 );
 CREATE TABLE IF NOT EXISTS referrals (              -- doctor -> physio
@@ -60,6 +62,7 @@ CREATE TABLE IF NOT EXISTS notifications (          -- in-app bell + SMS outbox
   send_at TIMESTAMPTZ NOT NULL,
   sent_at TIMESTAMPTZ,
   read_at TIMESTAMPTZ,
+  link_id INT,                                       -- for kind='link_request': the care_links row to answer
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 CREATE TABLE IF NOT EXISTS sessions (
@@ -68,6 +71,9 @@ CREATE TABLE IF NOT EXISTS sessions (
   acting_patient_id INT REFERENCES users(id),        -- caregiver currently viewing this parent
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+ALTER TABLE care_links ADD COLUMN IF NOT EXISTS status TEXT NOT NULL DEFAULT 'accepted';
+ALTER TABLE care_links ADD COLUMN IF NOT EXISTS responded_at TIMESTAMPTZ;
+ALTER TABLE notifications ADD COLUMN IF NOT EXISTS link_id INT;
 CREATE INDEX IF NOT EXISTS idx_surveys_patient ON surveys(patient_id, submitted_at);
 CREATE INDEX IF NOT EXISTS idx_appts_patient ON appointments(patient_id, scheduled_at);
 `;

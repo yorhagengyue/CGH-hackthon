@@ -2,12 +2,11 @@
 import { db, one } from "@/lib/db";
 import { indexValue, type Dim } from "@/lib/eq5d";
 import { notifyApp } from "@/lib/notify";
-import { body, error, isResponse, json, requireApi, viewedPatientId } from "@/lib/api";
+import { body, error, isResponse, json, requireApi, requireViewedPatient } from "@/lib/api";
 type Body = { appt?: number | null; mo?: number; sc?: number; ua?: number; pd?: number; ad?: number; eq_vas?: number; pain?: number };
 export async function POST(req: Request) {
   const s = await requireApi(req, "patient", "caregiver"); if (isResponse(s)) return s;
-  const patientId = viewedPatientId(s);
-  if (!patientId) return error("Choose which parent you are helping first.", 409);
+  const patientId = await requireViewedPatient(s); if (isResponse(patientId)) return patientId;
   const b = await body<Body>(req);
   const lv = {} as Record<Dim, number>;
   for (const d of ["mo", "sc", "ua", "pd", "ad"] as Dim[]) { lv[d] = Number(b[d]); if (!(lv[d] >= 1 && lv[d] <= 5)) return error("Please answer every question."); }
