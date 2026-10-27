@@ -6,6 +6,7 @@ import { hashPassword, login, logout, session, setActingPatient } from "@/lib/au
 import { HOME } from "@/lib/roles";
 import { indexValue, regionFromDiagnosis, type Dim } from "@/lib/eq5d";
 import { dispatchDue, notifyApp, scheduleReminders } from "@/lib/notify";
+import { checkAlert } from "@/lib/alerts";
 import { addFamilyByPatient, linkAccepted, removeFamily, requestLink, respondLink } from "@/lib/care";
 
 
@@ -71,8 +72,9 @@ export async function submitSurveyAction(_: unknown, fd: FormData) {
     if (!a) return { error: "Appointment not found." };
     if (await one("SELECT 1 FROM surveys WHERE appointment_id = $1", [apptId])) return { error: "Already submitted for this appointment." };
   }
-  await q(`INSERT INTO surveys(appointment_id, patient_id, filled_by, mo, sc, ua, pd, ad, eq_vas, pain, index_value) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`,
+  const [ins] = await q(`INSERT INTO surveys(appointment_id, patient_id, filled_by, mo, sc, ua, pd, ad, eq_vas, pain, index_value) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING id`,
     [apptId, patientId, s.user.id, lv.mo, lv.sc, lv.ua, lv.pd, lv.ad, vas, pain, indexValue(lv)]);
+  await checkAlert(q, Number(ins.id), patientId, apptId);
   if (apptId) {
     const a = await one<{ physio_id: number | null }>("SELECT physio_id FROM appointments WHERE id = $1", [apptId]);
     if (a?.physio_id) await notifyApp(q, a.physio_id, "survey", `A patient submitted their pre-visit questionnaire.`, apptId);
@@ -122,10 +124,11 @@ export async function dispatchSmsAction() {
   revalidatePath("/sms");
 }
 
-export async function markReadAction() {
+export async function markReadAction(fd?: FormData) {
   const s = await session(); if (!s) return;
   const q = await db(); await q("UPDATE notifications SET read_at = now() WHERE user_id = $1 AND channel='app' AND read_at IS NULL", [s.user.id]);
-  revalidatePath("/patient");
+  revalidatePath("/patient"); revalidatePath("/inbox"); revalidatePath("/", "layout");
+  const back = fd?.get("back"); if (back) redirect(String(back));
 }
 
 export async function respondLinkAction(fd: FormData) {

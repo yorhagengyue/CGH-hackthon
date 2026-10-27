@@ -78,6 +78,16 @@ ALTER TABLE care_links ADD COLUMN IF NOT EXISTS responded_at TIMESTAMPTZ;
 ALTER TABLE care_links ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ NOT NULL DEFAULT now();
 ALTER TABLE notifications ADD COLUMN IF NOT EXISTS link_id INT;
 ALTER TABLE referrals ADD COLUMN IF NOT EXISTS surgery_date DATE;
+ALTER TABLE surveys ADD COLUMN IF NOT EXISTS flagged BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE surveys ADD COLUMN IF NOT EXISTS flag_reason TEXT;
+CREATE TABLE IF NOT EXISTS push_subscriptions (
+  id SERIAL PRIMARY KEY,
+  user_id INT NOT NULL REFERENCES users(id),
+  endpoint TEXT NOT NULL UNIQUE,
+  p256dh TEXT NOT NULL,
+  auth TEXT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
 CREATE INDEX IF NOT EXISTS idx_surveys_patient ON surveys(patient_id, submitted_at);
 CREATE INDEX IF NOT EXISTS idx_appts_patient ON appointments(patient_id, scheduled_at);
 `;

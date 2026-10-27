@@ -6,5 +6,5 @@ export async function GET(req: Request) {
   const day = new URL(req.url).searchParams.get("day");
   const date = day ? new Date(day + "T00:00:00+08:00") : new Date();
   const list = await clinicList(s.user.role === "physio" ? s.user.id : null, date);
-  return json({ day: date.toISOString(), rows: list.map((r) => ({ ...r, age: age(r.birthday), masked_id: null })), submitted: list.filter((r) => r.cur).length, total: list.length });
+  return json({ day: date.toISOString(), rows: list.map((r) => ({ ...r, age: age(r.birthday), masked_id: null, flagged: !!r.cur?.flagged, flag_reason: r.cur?.flag_reason ?? null })), submitted: list.filter((r) => r.cur).length, total: list.length });
 }

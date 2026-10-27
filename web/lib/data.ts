@@ -2,7 +2,7 @@ import "server-only";
 import { db, one } from "./db";
 import { DIMS, DIM_LABEL, LEVEL_LABEL, VALUE_SET, flag, type Dim } from "./eq5d";
 
-export type Survey = { id: number; appointment_id: number | null; mo: number; sc: number; ua: number; pd: number; ad: number; eq_vas: number; pain: number; index_value: number; submitted_at: string; filled_by_name: string };
+export type Survey = { id: number; appointment_id: number | null; mo: number; sc: number; ua: number; pd: number; ad: number; eq_vas: number; pain: number; index_value: number; submitted_at: string; filled_by_name: string; flagged?: boolean; flag_reason?: string | null };
 export type Appt = { id: number; referral_id: number; scheduled_at: string; kind: string; status: string; physio_name: string | null; survey_id: number | null };
 export type Referral = { id: number; diagnosis: string; region: string; notes: string | null; status: string; created_at: string; doctor_name: string; physio_id: number | null; physio_name: string | null; surgery_date: string | null };
 

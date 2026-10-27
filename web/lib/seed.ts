@@ -62,8 +62,8 @@ export async function seedIfEmpty(q: Q) {
   // each patient: a referral, 1-4 past appointments with surveys, and (for some) an upcoming one
   for (const [k, p] of patients.entries()) {
     const physio = k < 2 ? physios[0] : pick(physios);
-    // every referral is post-operative in the demo: surgery 1-18 months ago
-    const surgery = (() => { const d = new Date(today); d.setMonth(d.getMonth() - (1 + Math.floor(rnd() * 18))); d.setDate(1 + Math.floor(rnd() * 27)); return d.toISOString().slice(0, 10); })();
+    // about 70% are post-operative (surgery 1-18 months ago); the rest had no surgery
+    const surgery = rnd() < 0.7 ? (() => { const d = new Date(today); d.setMonth(d.getMonth() - (1 + Math.floor(rnd() * 18))); d.setDate(1 + Math.floor(rnd() * 27)); return d.toISOString().slice(0, 10); })() : null;
     const ref = (await q(`INSERT INTO referrals(patient_id, doctor_id, physio_id, diagnosis, region, notes, surgery_date) VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING id`,
       [p.id, doctor, physio, p.dx, p.region, surgery ? "Post-operative rehabilitation." : "Referred for outpatient physiotherapy.", surgery]))[0].id as number;
     const nPast = k < 2 ? 4 : Math.floor(rnd() * 4);

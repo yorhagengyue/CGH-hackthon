@@ -1,6 +1,7 @@
 // Reminders: when an appointment is created we queue two SMS (7 days and 3 days before).
 // dispatchDue() marks them sent (and really sends via Twilio when TWILIO_* env vars exist).
 import "server-only";
+import { sendPushToUser } from "./push";
 
 type Q = (sql: string, params?: unknown[]) => Promise<Record<string, unknown>[]>;
 
@@ -27,13 +28,15 @@ export async function scheduleReminders(q: Q, appointmentId: number, patientId: 
 
 export async function notifyApp(q: Q, userId: number, kind: string, message: string, appointmentId: number | null = null) {
   await q(`INSERT INTO notifications(user_id, appointment_id, channel, kind, message, send_at, sent_at) VALUES ($1,$2,'app',$3,$4,now(),now())`, [userId, appointmentId, kind, message]);
+  if (kind !== "alert") await sendPushToUser(q, userId, "CGH Physio", message, "/patient?tab=notifications").catch(() => undefined);
 }
 
 export async function dispatchDue(q: Q): Promise<number> {
   // a reminder is only for a questionnaire that is still not done: drop the ones whose appointment already has one
   await q(`DELETE FROM notifications WHERE channel='sms' AND sent_at IS NULL AND appointment_id IN (SELECT appointment_id FROM surveys WHERE appointment_id IS NOT NULL)`);
-  const due = await q(`SELECT n.id, n.message, u.phone FROM notifications n JOIN users u ON u.id = n.user_id WHERE n.channel='sms' AND n.sent_at IS NULL AND n.send_at <= now()`);
+  const due = await q(`SELECT n.id, n.message, n.user_id, n.kind, u.phone FROM notifications n JOIN users u ON u.id = n.user_id WHERE n.channel='sms' AND n.sent_at IS NULL AND n.send_at <= now()`);
   for (const d of due) {
+    if (String(d.kind).startsWith("reminder")) await sendPushToUser(q, Number(d.user_id), "Questionnaire reminder", String(d.message).replace(/https?:\S+/, "").trim(), "/patient").catch(() => undefined);
     if (process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN && process.env.TWILIO_FROM && d.phone) {
       const body = new URLSearchParams({ To: String(d.phone), From: process.env.TWILIO_FROM, Body: String(d.message) });
       await fetch(`https://api.twilio.com/2010-04-01/Accounts/${process.env.TWILIO_ACCOUNT_SID}/Messages.json`, {

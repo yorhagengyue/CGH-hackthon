@@ -4,11 +4,11 @@ import { db } from "./db";
 import { flagsFor, type Survey } from "./data";
 import { verdict, type Verdict } from "./plain";
 
-export type SearchParams = { q?: string; region?: string; diagnosis?: string; min_age?: number | null; max_age?: number | null; postop_min_months?: number | null; postop_max_months?: number | null; scope: "mine" | "all"; physioId?: number | null };
-export type SearchRow = { id: number; name: string; login_id_masked: string; age: number | null; gender: string | null; diagnosis: string; region: string; physio_name: string | null; surgery_date: string | null; months_post_op: number | null; last_prom_at: string | null; n_proms: number; verdict: Verdict };
+export type SearchParams = { q?: string; region?: string; diagnosis?: string; min_age?: number | null; max_age?: number | null; postop_min_months?: number | null; postop_max_months?: number | null; postop_none?: boolean; scope: "mine" | "all"; physioId?: number | null };
+export type SearchRow = { id: number; name: string; login_id_masked: string; age: number | null; gender: string | null; diagnosis: string; region: string; physio_name: string | null; surgery_date: string | null; months_post_op: number | null; last_prom_at: string | null; n_proms: number; verdict: Verdict; flagged: boolean; flag_reason: string | null };
 
 export const REGIONS = ["Knee", "Shoulder", "Lower back", "Neck", "Hip", "Ankle / foot", "Hand / wrist", "Elbow", "Other"];
-export const hasFilters = (p: Partial<SearchParams>) => !!(p.q?.trim() || p.region || p.diagnosis || p.min_age != null || p.max_age != null || p.postop_min_months != null || p.postop_max_months != null);
+export const hasFilters = (p: Partial<SearchParams>) => !!(p.q?.trim() || p.region || p.diagnosis || p.min_age != null || p.max_age != null || p.postop_min_months != null || p.postop_max_months != null || p.postop_none);
 
 /** Shared predicates; r is the latest referral. Export may include un-referred patients when unfiltered. */
 export function patientSearchWhere(p: SearchParams, requireReferral = true) {
@@ -28,6 +28,7 @@ export function patientSearchWhere(p: SearchParams, requireReferral = true) {
   if (p.max_age != null) where.push(`u.birthday > (now() - (${add(p.max_age + 1)} || ' years')::interval)`);
   if (p.postop_min_months != null) where.push(`r.surgery_date IS NOT NULL AND r.surgery_date <= (now() - (${add(p.postop_min_months)} || ' months')::interval)`);
   if (p.postop_max_months != null) where.push(`r.surgery_date IS NOT NULL AND r.surgery_date > (now() - (${add(p.postop_max_months)} || ' months')::interval)`);
+  if (p.postop_none) where.push("r.surgery_date IS NULL");
   if (p.scope === "mine") where.push(`r.physio_id = ${add(p.physioId ?? -1)}`);
   return { where, args };
 }
@@ -51,7 +52,7 @@ export async function searchPatients(p: SearchParams): Promise<SearchRow[]> {
     const months = r.surgery_date ? Math.floor((now - new Date(r.surgery_date).getTime()) / (30.44 * 86400000)) : null;
     return { id: r.id, name: r.name, login_id_masked: `${r.login_id.slice(0, 1)}****${r.login_id.slice(-4)}`, age: r.birthday ? Math.floor((now - new Date(r.birthday).getTime()) / 31557600000) : null,
       gender: r.gender, diagnosis: r.diagnosis, region: r.region, physio_name: r.physio_name, surgery_date: r.surgery_date, months_post_op: months, last_prom_at: r.last_prom_at, n_proms: r.n_proms,
-      verdict: cur ? verdict(cur, prev) : "first" as Verdict, _flags: cur ? flagsFor(cur, prev) : null } as SearchRow;
+      verdict: cur ? verdict(cur, prev) : "first" as Verdict, flagged: !!cur?.flagged, flag_reason: cur?.flag_reason ?? null, _flags: cur ? flagsFor(cur, prev) : null } as SearchRow;
   });
 }
 
@@ -60,7 +61,7 @@ export function parseSearch(sp: Record<string, string | undefined>, scope: "mine
   const num = (v: string | undefined) => v != null && v !== "" && !isNaN(Number(v)) ? Number(v) : null;
   const postop = sp.postop ?? "";
   const [pmin, pmax] = postop === "0-3" ? [0, 3] : postop === "3-6" ? [3, 6] : postop === "6-12" ? [6, 12] : postop === "12+" ? [12, null] : [null, null];
-  return { q: sp.q ?? "", region: sp.region || undefined, diagnosis: sp.diagnosis || undefined, min_age: num(sp.min_age), max_age: num(sp.max_age), postop_min_months: num(sp.postop_min_months) ?? num(sp.postop_min) ?? pmin, postop_max_months: num(sp.postop_max_months) ?? num(sp.postop_max) ?? pmax, scope, physioId };
+  return { q: sp.q ?? "", region: sp.region || undefined, diagnosis: sp.diagnosis || undefined, min_age: num(sp.min_age), max_age: num(sp.max_age), postop_min_months: num(sp.postop_min_months) ?? num(sp.postop_min) ?? pmin, postop_max_months: num(sp.postop_max_months) ?? num(sp.postop_max) ?? pmax, postop_none: postop === "none", scope, physioId };
 }
 
 /** Distinct diagnoses in the data, most common first, grouped by body region, for the Diagnosis dropdown. */

@@ -7,6 +7,7 @@ import { VERDICT_TEXT, plainDiagnosis, verdict } from "@/lib/plain";
 import { linkAccepted, pendingRequests } from "@/lib/care";
 import { LinkRequestCard } from "@/components/LinkRequestCard";
 import { FamilySection } from "@/components/FamilySection";
+import { PushButton } from "@/components/PushButton";
 import { Card, Pill, fmtDT, fmtD, age, startOfTodaySG } from "@/components/ui";
 import { markReadAction } from "../actions";
 
@@ -47,6 +48,7 @@ export default async function PatientPage({ searchParams }: { searchParams: Prom
           </>}
         </div>
         {cur && <p className={`mt-4 text-lg font-bold ${t.tone === "ok" ? "text-ok" : t.tone === "warn" ? "text-warn" : "text-slate-700"}`}>{v === "first" ? "Your first questionnaire is in." : t.title}</p>}
+        {s.user.role === "patient" && <div className="mt-4"><PushButton publicKey={process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY} /></div>}
         {requests.slice(0, 2).map((r) => <div key={r.id} className="mt-5"><LinkRequestCard r={r} /></div>)}
         {requests.length > 2 && <p className="mt-3 text-sm text-slate-600">and {requests.length - 2} more in <a href="/patient?tab=notifications" className="text-cgh-blue font-bold">Notifications</a></p>}
       </div>; })()}

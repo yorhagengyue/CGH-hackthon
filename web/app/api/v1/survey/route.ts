@@ -2,6 +2,7 @@
 import { db, one } from "@/lib/db";
 import { indexValue, type Dim } from "@/lib/eq5d";
 import { notifyApp } from "@/lib/notify";
+import { checkAlert } from "@/lib/alerts";
 import { body, error, isResponse, json, requireApi, requireViewedPatient } from "@/lib/api";
 type Body = { appt?: number | null; mo?: number; sc?: number; ua?: number; pd?: number; ad?: number; eq_vas?: number; pain?: number };
 export async function POST(req: Request) {
@@ -23,6 +24,7 @@ export async function POST(req: Request) {
   const index = indexValue(lv);
   const [row] = await q(`INSERT INTO surveys(appointment_id, patient_id, filled_by, mo, sc, ua, pd, ad, eq_vas, pain, index_value) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING id, submitted_at::text`,
     [apptId, patientId, s.user.id, lv.mo, lv.sc, lv.ua, lv.pd, lv.ad, vas, pain, index]);
+  await checkAlert(q, Number(row.id), patientId, apptId);
   if (apptId) {
     const a = await one<{ physio_id: number | null }>("SELECT physio_id FROM appointments WHERE id = $1", [apptId]);
     if (a?.physio_id) await notifyApp(q, a.physio_id, "survey", `A patient submitted their pre-visit questionnaire.`, apptId);

@@ -30,9 +30,10 @@ export default async function Physio({ searchParams }: { searchParams: Promise<R
         {list.map((r) => { const v = r.cur ? verdict(r.cur, r.prev) : null; const t = v ? VERDICT_TEXT[v] : null; const why: string[] = [];
           if (r.cur && r.prev) { if (r.cur.pain !== r.prev.pain) why.push(`pain ${r.prev.pain}→${r.cur.pain}`); for (const d of DIMS) if (r.cur[d] !== r.prev[d]) why.push(`${DIM_LABEL[d].toLowerCase()} ${r.prev[d]}→${r.cur[d]}`); if (r.cur.eq_vas !== r.prev.eq_vas) why.push(`health ${r.prev.eq_vas}→${r.cur.eq_vas}`); if (!why.length) why.push("all answers the same"); }
           else if (r.cur) why.push(`pain ${r.cur.pain}/10`, `health ${r.cur.eq_vas}/100`);
-          return <tr key={r.appt_id}><td className="font-bold tabular-nums whitespace-nowrap text-base">{fmtT(r.scheduled_at)}</td>
+          const flagged = !!r.cur?.flagged;
+          return <tr key={r.appt_id} className={flagged ? "shadow-[inset_3px_0_0_0_#b91c1c]" : ""}><td className="font-bold tabular-nums whitespace-nowrap text-base">{fmtT(r.scheduled_at)}</td>
             <td className="text-base"><a href={`/patients/${r.patient_id}`} className="font-bold text-cgh-blue hover:underline">{r.name}</a></td>
-            <td>{t ? <Pill tone={t.tone}>{v === "first" ? "First visit" : v === "better" ? "Improved" : v === "same" ? "Stable" : "Worse"}</Pill> : <Pill tone="neutral">Awaiting</Pill>}</td>
+            <td>{flagged ? <Pill tone="danger">Needs attention</Pill> : t ? <Pill tone={t.tone}>{v === "first" ? "First visit" : v === "better" ? "Improved" : v === "same" ? "Stable" : "Worse"}</Pill> : <Pill tone="neutral">Awaiting</Pill>}{flagged && <div className="text-xs text-danger mt-0.5">{r.cur?.flag_reason}</div>}</td>
             <td className="text-right"><details><summary className="cursor-pointer text-xs text-slate-400 hover:text-cgh-blue list-none">Details</summary><div className="text-left text-xs text-slate-600 mt-1 max-w-xs ml-auto">{r.kind} · {age(r.birthday) ?? "-"} y {(r.gender ?? "-")[0]} · {r.region} · {r.diagnosis}{why.length > 0 && <div className="mt-0.5">{why.slice(0, 4).join(" · ")}</div>}{r.cur && <div className="mt-0.5 text-slate-400">submitted {fmtDT(r.cur.submitted_at)}</div>}</div></details></td></tr>; })}
         {list.length === 0 && <tr><td colSpan={4} className="py-3 text-slate-400">No appointments on this day.</td></tr>}
       </tbody></table>

@@ -25,7 +25,9 @@ export function ProgressTrend({ points, clinical = false }: { points: SurveyPoin
   useEffect(() => { const el = box.current; if (!el) return; const set = () => setW(Math.max(300, Math.floor(el.clientWidth))); const ro = new ResizeObserver(set); ro.observe(el); set(); return () => ro.disconnect(); }, []);
   useEffect(() => { setHover(null); }, [series, focus]);
 
-  const H = W < 640 ? 220 : 260, pl = series === "dims" ? (clinical ? 84 : 64) : 40, pr = 16, pt = 30, pb = 34;
+  const H = W < 640 ? 240 : 280, pl = series === "dims" ? (clinical ? 92 : 72) : 48, pr = 16, pt = 44, pb = 34;
+  const yTitle = series === "pain" ? "Pain, 0–10" : series === "health" ? "Overall health, 0–100" : "Level, 1 = no problems";
+  const showX = (i: number) => points.length < 4 || W >= 640 || i === points.length - 1 || (points.length - 1 - i) % 2 === 0;
   const max = series === "pain" ? 10 : series === "health" ? 100 : 5, min = series === "dims" ? 1 : 0;
   const ticks = series === "pain" ? [0, 2, 4, 6, 8, 10] : series === "health" ? [0, 25, 50, 75, 100] : [1, 2, 3, 4, 5];
   const xs = (i: number) => points.length === 1 ? (pl + W - pr) / 2 : pl + (i * (W - pl - pr)) / (points.length - 1);
@@ -54,7 +56,8 @@ export function ProgressTrend({ points, clinical = false }: { points: SurveyPoin
     <div ref={box} className="w-full relative">{points.length === 0 ? <p className="text-slate-500 mt-4">Your first questionnaire will appear here.</p> : <>
       <svg viewBox={`0 0 ${W} ${H}`} width={W} height={H} className="mt-3 block max-w-full touch-none select-none" onPointerMove={onMove} onPointerDown={onMove} onPointerLeave={() => setHover(null)}>
         <defs><linearGradient id={gid} x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stopColor={main?.color ?? "#0070b8"} stopOpacity="0.18" /><stop offset="100%" stopColor={main?.color ?? "#0070b8"} stopOpacity="0" /></linearGradient></defs>
-        {ticks.map((t) => <g key={t}><line x1={pl} x2={W - pr} y1={ys(t)} y2={ys(t)} stroke="#e2e8f0" /><text x={pl - 8} y={ys(t) + 4} fontSize="11" textAnchor="end" fill="#64748b">{series === "dims" ? (clinical ? `${t} · ${LEVEL_SHORT[t]}` : LEVEL_SHORT[t]) : t}</text></g>)}
+        {ticks.map((t) => <g key={t}><line x1={pl} x2={W - pr} y1={ys(t)} y2={ys(t)} stroke="#e2e8f0" /><text x={pl - 8} y={ys(t) + 4} fontSize="11" fontWeight="600" textAnchor="end" fill="#334155">{series === "dims" ? (clinical ? `${t} · ${LEVEL_SHORT[t]}` : LEVEL_SHORT[t]) : t}</text></g>)}
+        <text x={pl} y={16} fontSize="11" fontWeight="700" fill="#334155">{yTitle}</text>
         {hover != null && <line x1={xs(hover)} x2={xs(hover)} y1={pt - 6} y2={H - pb} stroke="#94a3b8" strokeDasharray="3 3" />}
         {main && points.length > 1 && <path d={`${main.vals.map((v, i) => `${i ? "L" : "M"}${xs(i)},${ys(v)}`).join(" ")} L${xs(points.length - 1)},${ys(worst)} L${xs(0)},${ys(worst)} Z`} fill={`url(#${gid})`} />}
         {lines.map((l) => { const dim = main && l !== main; const d = l.vals.map((v, i) => `${i ? "L" : "M"}${xs(i)},${ys(v)}`).join(" "); return <g key={l.key} opacity={dim ? 0.15 : 1} style={{ transition: "opacity .2s" }}>
@@ -62,7 +65,7 @@ export function ProgressTrend({ points, clinical = false }: { points: SurveyPoin
           {l.vals.map((v, i) => { const on = hover === i; return <g key={i}><circle cx={xs(i)} cy={ys(v)} r={on ? 7 : lines.length > 1 && !main ? 4 : 5} fill={on ? l.color : "#fff"} stroke={l.color} strokeWidth="2.5" style={{ transition: "r .15s" }} />
             {(series !== "dims" || clinical) && l === main && hover !== i && <text x={xs(i)} y={ys(v) - 11} fontSize="13" fontWeight="800" textAnchor="middle" fill={l.color}>{v}</text>}</g>; })}
         </g>; })}
-        {points.map((p, i) => <text key={p.id} x={xs(i)} y={H - 12} fontSize="11" fontWeight={hover === i ? 800 : 400} textAnchor="middle" fill={hover === i ? "#14263a" : "#64748b"}>{p.label}</text>)}
+        {points.map((p, i) => (showX(i) || hover === i) && <text key={p.id} x={xs(i)} y={H - 12} fontSize="11" fontWeight={hover === i ? 800 : 500} textAnchor="middle" fill={hover === i ? "#14263a" : "#475569"}>{p.label}</text>)}
         {lines.map((l) => <rect key={`hit-${l.key}`} x={pl} y={pt - 10} width={W - pl - pr} height={H - pt - pb + 10} fill="transparent" />)}
       </svg>
       {hover != null && <div className="pointer-events-none absolute -translate-x-1/2 bg-cgh-ink text-white text-xs rounded-lg px-3 py-2 shadow-lg" style={{ left: Math.min(Math.max(xs(hover), 70), W - 70), top: 0 }}>
