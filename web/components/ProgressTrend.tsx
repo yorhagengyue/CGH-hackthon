@@ -29,7 +29,9 @@ export function ProgressTrend({ points }: { points: SurveyPoint[] }) {
   const max = series === "pain" ? 10 : series === "health" ? 100 : 5, min = series === "dims" ? 1 : 0;
   const ticks = series === "pain" ? [0, 2, 4, 6, 8, 10] : series === "health" ? [0, 25, 50, 75, 100] : [1, 2, 3, 4, 5];
   const xs = (i: number) => points.length === 1 ? (pl + W - pr) / 2 : pl + (i * (W - pl - pr)) / (points.length - 1);
-  const ys = (y: number) => pt + (1 - (y - min) / (max - min)) * (H - pt - pb);
+  const upIsBetter = series === "health";          // health: high = good. pain / five questions: low = good, so the axis is flipped
+  const ys = (y: number) => upIsBetter ? pt + (1 - (y - min) / (max - min)) * (H - pt - pb) : pt + ((y - min) / (max - min)) * (H - pt - pb);
+  const worst = upIsBetter ? min : max;             // the axis value at the bottom of the chart
   const lines = useMemo(() => series === "pain" ? [{ key: "pain" as const, name: "Pain", color: "#b91c1c", vals: points.map((p) => p.pain) }]
     : series === "health" ? [{ key: "health" as const, name: "Overall health", color: "#0070b8", vals: points.map((p) => p.health) }]
     : DIM.map((d) => ({ key: d.key, name: d.name, color: d.color, vals: points.map((p) => p[d.key]) })), [series, points]);
@@ -54,9 +56,9 @@ export function ProgressTrend({ points }: { points: SurveyPoint[] }) {
         <defs><linearGradient id={gid} x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stopColor={main?.color ?? "#0070b8"} stopOpacity="0.18" /><stop offset="100%" stopColor={main?.color ?? "#0070b8"} stopOpacity="0" /></linearGradient></defs>
         {ticks.map((t) => <g key={t}><line x1={pl} x2={W - pr} y1={ys(t)} y2={ys(t)} stroke="#e2e8f0" /><text x={pl - 8} y={ys(t) + 4} fontSize="11" textAnchor="end" fill="#64748b">{series === "dims" ? LEVEL_SHORT[t] : t}</text></g>)}
         {hover != null && <line x1={xs(hover)} x2={xs(hover)} y1={pt - 6} y2={H - pb} stroke="#94a3b8" strokeDasharray="3 3" />}
-        {main && points.length > 1 && <path d={`${main.vals.map((v, i) => `${i ? "L" : "M"}${xs(i)},${ys(v)}`).join(" ")} L${xs(points.length - 1)},${ys(min)} L${xs(0)},${ys(min)} Z`} fill={`url(#${gid})`} />}
-        {lines.map((l) => { const dim = main && l !== main; const d = l.vals.map((v, i) => `${i ? "L" : "M"}${xs(i)},${ys(v)}`).join(" "); return <g key={l.key} opacity={dim ? 0.25 : 1} style={{ transition: "opacity .2s" }}>
-          <path d={d} fill="none" stroke={l.color} strokeWidth={2.5} strokeLinejoin="round" strokeLinecap="round" pathLength={1} className="trend-draw" />
+        {main && points.length > 1 && <path d={`${main.vals.map((v, i) => `${i ? "L" : "M"}${xs(i)},${ys(v)}`).join(" ")} L${xs(points.length - 1)},${ys(worst)} L${xs(0)},${ys(worst)} Z`} fill={`url(#${gid})`} />}
+        {lines.map((l) => { const dim = main && l !== main; const d = l.vals.map((v, i) => `${i ? "L" : "M"}${xs(i)},${ys(v)}`).join(" "); return <g key={l.key} opacity={dim ? 0.15 : 1} style={{ transition: "opacity .2s" }}>
+          <path d={d} fill="none" stroke={l.color} strokeWidth={lines.length > 1 && l === main ? 3.5 : 2.5} strokeLinejoin="round" strokeLinecap="round" pathLength={1} className="trend-draw" />
           {l.vals.map((v, i) => { const on = hover === i; return <g key={i}><circle cx={xs(i)} cy={ys(v)} r={on ? 7 : lines.length > 1 && !main ? 4 : 5} fill={on ? l.color : "#fff"} stroke={l.color} strokeWidth="2.5" style={{ transition: "r .15s" }} />
             {series !== "dims" && l === main && hover !== i && <text x={xs(i)} y={ys(v) - 11} fontSize="13" fontWeight="800" textAnchor="middle" fill={l.color}>{v}</text>}</g>; })}
         </g>; })}
@@ -69,6 +71,7 @@ export function ProgressTrend({ points }: { points: SurveyPoint[] }) {
         {!main && lines.length > 1 && <div className="text-slate-300 mt-0.5">Tap a question below to see it alone</div>}
       </div>}
     </>}</div>
+    {points.length > 0 && <div className="text-[11px] text-slate-500 mt-1">{series === "pain" ? "top = no pain · bottom = worst pain" : series === "dims" ? "top = no problems · bottom = unable / extreme" : "top = best health · bottom = worst health"} · higher on the chart is always better</div>}
     {lines.length > 1 && <div className="flex flex-wrap gap-2 mt-3">{lines.map((l) => <button type="button" key={l.key} onClick={() => setFocus(focus === l.key ? null : (l.key as DimKey))} className={`inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 rounded-full border transition ${focus === l.key ? "border-transparent text-white" : "border-slate-200 text-slate-700 bg-white"}`} style={focus === l.key ? { background: l.color } : undefined}><i className="w-2.5 h-2.5 rounded-full" style={{ background: focus === l.key ? "#fff" : l.color }} />{l.name}</button>)}{focus && <button type="button" onClick={() => setFocus(null)} className="text-xs text-cgh-blue font-bold px-2">Show all</button>}</div>}
     <style>{`.trend-draw{stroke-dasharray:1;stroke-dashoffset:1;animation:trend-draw .8s ease-out forwards}@keyframes trend-draw{to{stroke-dashoffset:0}}@media (prefers-reduced-motion:reduce){.trend-draw{animation:none;stroke-dashoffset:0}}`}</style>
   </div>;
