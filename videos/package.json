@@ -1,0 +1,23 @@
+{
+  "name": "cgh-proms-video",
+  "private": true,
+  "description": "CGH Physio PROMs demo video: real screen recordings of the web app and the iPhone app, assembled in Remotion",
+  "scripts": {
+    "preview": "remotion studio src/index.ts",
+    "render": "remotion render src/index.ts Demo out/demo-1080p.mp4",
+    "render:portrait": "remotion render src/index.ts DemoPortrait out/demo-portrait.mp4",
+    "render:sample": "remotion render src/index.ts Sample out/sample.mp4",
+    "still": "remotion still src/index.ts Demo out/frame.png --frame=60"
+  },
+  "dependencies": {
+    "@remotion/cli": "4.0.539",
+    "@remotion/google-fonts": "4.0.539",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "remotion": "4.0.539"
+  },
+  "devDependencies": {
+    "@types/react": "^19",
+    "typescript": "^5"
+  }
+}
