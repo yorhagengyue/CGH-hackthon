@@ -21,7 +21,7 @@ Send times are computed in Singapore time regardless of the server's timezone.
 
 `GET /api/sms` and `POST /api/sms` dispatch notifications with `channel = 'sms'`, no `sent_at`, and `send_at` at or before the current time. Both methods require `Authorization: Bearer <CRON_SECRET>`. The `key` query parameter is not accepted. In the staff SMS outbox (`/sms`), staff can also use **Run dispatcher** to process due items manually.
 
-The Vercel cron configuration calls `/api/sms` every hour (`0 * * * *`) so the 2-hour reminder lands on time. Configure `CRON_SECRET` in Vercel. Requests return `503` if the secret is not configured and `401` if the bearer token is missing or incorrect.
+The Vercel cron calls `/api/sms` once a day at 09:00 Singapore time (Hobby plan limit). To make the 2-hour reminder punctual, every physiotherapist or patient page load also runs the dispatcher (throttled to once per 5 minutes), and an external scheduler can `POST /api/sms` hourly with the bearer secret. Configure `CRON_SECRET` in Vercel. Requests return `503` if the secret is not configured and `401` if the bearer token is missing or incorrect.
 
 For an authorized manual dispatch, call:
 

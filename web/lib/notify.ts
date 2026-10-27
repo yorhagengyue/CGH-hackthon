@@ -80,3 +80,12 @@ export async function dispatchDue(q: Q): Promise<DispatchSummary> {
   }
   return summary;
 }
+
+// Vercel Hobby only allows one cron a day, so pages also nudge the dispatcher: at most once every 5 minutes per instance.
+declare global { var __lastDispatch: number | undefined; }
+export async function maybeDispatch(q: Q): Promise<void> {
+  const now = Date.now();
+  if (globalThis.__lastDispatch && now - globalThis.__lastDispatch < 5 * 60 * 1000) return;
+  globalThis.__lastDispatch = now;
+  try { await dispatchDue(q); } catch (e) { console.error("dispatch from page load failed:", (e as Error).message); }
+}

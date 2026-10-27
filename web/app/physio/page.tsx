@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { session } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { maybeDispatch } from "@/lib/notify";
 import { clinicList } from "@/lib/data";
 import { DIMS, DIM_LABEL } from "@/lib/eq5d";
 import { VERDICT_TEXT, verdict } from "@/lib/plain";
@@ -13,6 +14,7 @@ export default async function Physio({ searchParams }: { searchParams: Promise<R
   const sp = await searchParams; const { day } = sp;
   const searching = hasFilters(parseSearch(sp, "mine", s.user.id));
   const date = day ? new Date(day + "T00:00:00+08:00") : new Date();
+  await maybeDispatch(await db());
   const list = await clinicList(s.user.id, date);
   const q = await db();
   const mine = await q<{ id: number; name: string; login_id: string; diagnosis: string; region: string; n: number; last: string | null; next: string | null }>(

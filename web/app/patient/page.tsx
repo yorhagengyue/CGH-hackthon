@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { session } from "@/lib/auth";
 import { db, one } from "@/lib/db";
+import { maybeDispatch } from "@/lib/notify";
 import { patientBundle } from "@/lib/data";
 import { PlainProgress } from "@/components/PlainProgress";
 import { VERDICT_TEXT, plainDiagnosis, verdict } from "@/lib/plain";
@@ -21,6 +22,7 @@ export default async function PatientPage({ searchParams }: { searchParams: Prom
   const b = await patientBundle(patientId); if (!b) redirect("/");
   const requests = s.user.role === "patient" ? await pendingRequests(patientId) : [];
   const q = await db();
+  await maybeDispatch(q);
   const notes = await q<{ id: number; kind: string; message: string; send_at: string; read_at: string | null; channel: string }>(`SELECT id, kind, message, send_at::text, read_at::text, channel FROM notifications WHERE user_id = $1 AND (channel='app' OR sent_at IS NOT NULL) ORDER BY send_at DESC LIMIT 30`, [patientId]);
   const unread = notes.filter((n) => n.channel === "app" && !n.read_at && n.kind !== "link_request").length + (s.user.role === "patient" ? 0 : 0);
   const next = b.appointments.find((a) => a.status === "scheduled" && new Date(a.scheduled_at) >= startOfTodaySG());
