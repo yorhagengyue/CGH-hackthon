@@ -36,6 +36,12 @@ export async function seedIfEmpty(q: Q) {
   const [pend] = await q("INSERT INTO care_links(caregiver_id, patient_id, relationship, status) VALUES ($1,$2,'daughter','pending') RETURNING id", [daughter, dad]);
   await q(`INSERT INTO notifications(user_id, channel, kind, message, send_at, sent_at, link_id) VALUES ($1,'app','link_request',$2,now(),now(),$3)`,
     [dad, "Tan Mei Ling (your daughter) asks to help with your questionnaires. Allow?", pend.id]);
+  // a son too: family is many-to-many. Accepted for the father, still pending for the mother.
+  const son = await ins("caregiver", "S4567890D", "Tan Wei Jie", { phone: "+6594567890", gender: "MALE", birthday: "1988-02-11", address: "Blk 123 Tampines St 11 #05-123" });
+  await q("INSERT INTO care_links(caregiver_id, patient_id, relationship, status, responded_at) VALUES ($1,$2,'son','accepted',now())", [son, dad]);
+  const [pend2] = await q("INSERT INTO care_links(caregiver_id, patient_id, relationship, status) VALUES ($1,$2,'son','pending') RETURNING id", [son, mum]);
+  await q(`INSERT INTO notifications(user_id, channel, kind, message, send_at, sent_at, link_id) VALUES ($1,'app','link_request',$2,now(),now(),$3)`,
+    [mum, "Tan Wei Jie (your son) asks to help with your questionnaires. Allow?", pend2.id]);
 
   // referrals from the CGH extract -> synthetic identities
   const today = new Date(); today.setHours(0, 0, 0, 0);

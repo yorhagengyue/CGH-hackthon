@@ -15,7 +15,7 @@ export default async function Caregiver() {
        (SELECT s.id FROM appointments a JOIN surveys s ON s.appointment_id = a.id WHERE a.patient_id = u.id AND a.status='scheduled' AND a.scheduled_at >= date_trunc('day', now() AT TIME ZONE 'Asia/Singapore') AT TIME ZONE 'Asia/Singapore' ORDER BY a.scheduled_at LIMIT 1) AS next_done,
        (SELECT COUNT(*)::int FROM surveys s WHERE s.patient_id = u.id) AS n_surveys
      FROM care_links c JOIN users u ON u.id = c.patient_id WHERE c.caregiver_id = $1 ORDER BY u.name`, [s.user.id]);
-  return <div className="max-w-3xl mx-auto"><h1 className="text-[30px] mb-4">My parents</h1>
+  return <div className="max-w-3xl mx-auto"><h1 className="text-[30px] mb-1">My parents</h1><p className="text-slate-600 mb-4">You can help more than one parent. Each parent has to allow it once.</p>
     <div className="grid md:grid-cols-2 gap-4">
       {parents.map((p) => <div key={p.id} className="bg-white rounded-2xl shadow-card p-6">
         <div className="text-[22px] font-extrabold text-cgh-ink leading-tight">{p.name}</div>
@@ -25,6 +25,6 @@ export default async function Caregiver() {
           : <form action={actAsAction}><input type="hidden" name="patient_id" value={p.id} /><button className="px-6 py-3 rounded-xl bg-cgh-blue text-white font-bold hover:bg-cgh-blue-dark">See how {p.name.split(" ")[0]} is doing</button></form>}</div>
       </div>)}
     </div>
-    <details className="mt-6"><summary className="cursor-pointer text-cgh-blue font-bold">Link another parent</summary><div className="mt-3 max-w-sm"><ActionForm action={linkParentAction} submit="Link"><Field label="Parent's NRIC"><input name="parent_nric" className={inputCls} placeholder="S1234567A" required /></Field><Field label="Relationship"><select name="relationship" className={inputCls}><option>son</option><option>daughter</option><option>spouse</option><option>grandchild</option><option>caregiver</option></select></Field></ActionForm></div></details>
+    <details className="mt-6"><summary className="list-none cursor-pointer inline-block px-5 py-2.5 rounded-xl bg-cgh-blue text-white font-bold hover:bg-cgh-blue-dark">Add another parent</summary><div className="mt-3 max-w-sm"><ActionForm action={linkParentAction} submit="Link"><Field label="Parent's NRIC"><input name="parent_nric" className={inputCls} placeholder="S1234567A" required /></Field><Field label="Relationship"><select name="relationship" className={inputCls}><option>son</option><option>daughter</option><option>spouse</option><option>grandchild</option><option>caregiver</option></select></Field></ActionForm></div></details>
   </div>;
 }

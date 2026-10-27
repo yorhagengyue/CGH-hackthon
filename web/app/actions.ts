@@ -6,7 +6,7 @@ import { hashPassword, login, logout, session, setActingPatient } from "@/lib/au
 import { HOME } from "@/lib/roles";
 import { indexValue, regionFromDiagnosis, type Dim } from "@/lib/eq5d";
 import { dispatchDue, notifyApp, scheduleReminders } from "@/lib/notify";
-import { linkAccepted, requestLink, respondLink } from "@/lib/care";
+import { addFamilyByPatient, linkAccepted, removeFamily, requestLink, respondLink } from "@/lib/care";
 
 
 export async function loginAction(_: unknown, fd: FormData) {
@@ -133,4 +133,18 @@ export async function respondLinkAction(fd: FormData) {
   await respondLink(Number(fd.get("link_id")), s.user.id, String(fd.get("accept")) === "1");
   revalidatePath("/patient");
   redirect("/patient?tab=notifications");
+}
+
+export async function addFamilyAction(_: unknown, fd: FormData) {
+  const s = await session(); if (!s || s.user.role !== "patient") return { error: "Not allowed." };
+  const r = await addFamilyByPatient({ id: s.user.id, name: s.user.name, gender: s.user.gender }, String(fd.get("nric") ?? ""), String(fd.get("relationship") || "family member"));
+  revalidatePath("/patient");
+  return "error" in r ? { error: r.error } : { ok: `${r.name} added. They can now see your answers and fill in questionnaires for you.` };
+}
+
+export async function removeFamilyAction(fd: FormData) {
+  const s = await session(); if (!s || s.user.role !== "patient") return;
+  await removeFamily(s.user.id, Number(fd.get("link_id")));
+  revalidatePath("/patient");
+  redirect("/patient?tab=profile");
 }

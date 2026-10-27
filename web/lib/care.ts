@@ -41,3 +41,41 @@ export async function respondLink(linkId: number, patientId: number, accept: boo
     accept ? `${link.pname} allowed you to help with ${possessive(link.pgender)} questionnaires.` : `${link.pname} did not allow you to help with ${possessive(link.pgender)} questionnaires.`);
   return { ok: true, caregiverName: link.name };
 }
+
+export type FamilyMember = { id: number; caregiver_id: number; name: string; relationship: string; status: string; created_at: string; responded_at: string | null };
+
+/** All of a patient's family links: accepted first, then pending. */
+export async function familyOf(patientId: number): Promise<FamilyMember[]> {
+  const q = await db();
+  return q<FamilyMember>(`SELECT c.id, c.caregiver_id, u.name, c.relationship, c.status, c.created_at::text, c.responded_at::text
+    FROM care_links c JOIN users u ON u.id = c.caregiver_id WHERE c.patient_id = $1 AND c.status IN ('accepted','pending')
+    ORDER BY (c.status = 'accepted') DESC, u.name`, [patientId]);
+}
+
+/** The patient adds a family member by NRIC. No approval needed because the patient initiates it. */
+export async function addFamilyByPatient(patient: { id: number; name: string; gender: string | null }, nric: string, relationship: string): Promise<{ ok: true; name: string } | { error: string }> {
+  const id = nric.trim().toUpperCase().replace(/\s+/g, "");
+  if (!/^[STFGM]\d{7}[A-Z]$/.test(id)) return { error: "NRIC must look like S1234567A." };
+  const cg = await one<{ id: number; name: string; role: string }>("SELECT id, name, role FROM users WHERE login_id = $1", [id]);
+  if (!cg) return { error: `Ask them to register with NRIC ${id} first, then add again.` };
+  if (cg.role !== "caregiver") return { error: `${id} is registered as a ${cg.role}, not as a family member or caregiver.` };
+  if (cg.id === patient.id) return { error: "That is your own NRIC." };
+  const q = await db();
+  await q(`INSERT INTO care_links(caregiver_id, patient_id, relationship, status, responded_at) VALUES ($1,$2,$3,'accepted',now())
+    ON CONFLICT (caregiver_id, patient_id) DO UPDATE SET relationship = EXCLUDED.relationship, status = 'accepted', responded_at = now()`, [cg.id, patient.id, relationship]);
+  await q("UPDATE notifications SET read_at = now() WHERE kind = 'link_request' AND user_id = $1 AND link_id IN (SELECT id FROM care_links WHERE caregiver_id = $2 AND patient_id = $1)", [patient.id, cg.id]);
+  await notifyApp(q, cg.id, "link_accepted", `${patient.name} added you as ${possessive(patient.gender)} ${relationship}. You can now see ${possessive(patient.gender)} answers and fill in questionnaires for ${patient.gender === "MALE" ? "him" : patient.gender === "FEMALE" ? "her" : "them"}.`);
+  return { ok: true, name: cg.name };
+}
+
+/** The patient removes a family member (or withdraws a pending request). */
+export async function removeFamily(patientId: number, linkId: number): Promise<boolean> {
+  const q = await db();
+  const link = await one<{ caregiver_id: number; pname: string }>("SELECT c.caregiver_id, p.name AS pname FROM care_links c JOIN users p ON p.id = c.patient_id WHERE c.id = $1 AND c.patient_id = $2", [linkId, patientId]);
+  if (!link) return false;
+  await q("DELETE FROM notifications WHERE link_id = $1", [linkId]);
+  await q("DELETE FROM care_links WHERE id = $1", [linkId]);
+  await q("UPDATE sessions SET acting_patient_id = NULL WHERE user_id = $1 AND acting_patient_id = $2", [link.caregiver_id, patientId]);
+  await notifyApp(q, link.caregiver_id, "link_removed", `${link.pname} removed you from their family list.`);
+  return true;
+}
