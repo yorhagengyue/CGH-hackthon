@@ -14,7 +14,7 @@ async function login(page, id) {
   await page.goto(`${BASE}/login`); await pause(800);
   await page.fill('input[name="login_id"]', id); await pause(400);
   await page.fill('input[name="password"]', PW); await pause(400);
-  await page.click('button[type="submit"]'); await page.waitForLoadState("networkidle"); await pause(1200);
+  await page.keyboard.press("Enter"); await page.waitForURL((u) => !u.pathname.startsWith("/login"), { timeout: 20000 }); await page.waitForLoadState("networkidle"); await pause(1500);
 }
 
 const scenes = {

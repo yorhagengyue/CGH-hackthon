@@ -5,5 +5,6 @@ export const C = {
   ok: "#15803D", warn: "#B45309", danger: "#B91C1C",
 };
 export const FPS = 30;
-export const FADE = 9;          // 300 ms cross-fade
-export const TITLE_HOLD = 30;   // 1 s of title and icon before the footage
+export const FADE = 12;         // 400 ms cross-fade
+export const TITLE_HOLD = 30;   // 1 s of role card before the footage
+export const SPRING = { damping: 200, stiffness: 120, mass: 1 }; // restrained, no overshoot

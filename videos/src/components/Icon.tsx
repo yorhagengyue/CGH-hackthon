@@ -1,6 +1,5 @@
 import React from "react";
-import type { IconName } from "../scenes";
-// Simple line icons, 2 px stroke, in the brand blue. No emoji, no filled glyph soup.
+import type { IconName } from "../scenes/types";
 const paths: Record<IconName, React.ReactNode> = {
   home: <><path d="M3 11l9-8 9 8" /><path d="M5 10v10h14V10" /></>,
   user: <><circle cx="12" cy="8" r="4" /><path d="M4 21c0-4 4-6 8-6s8 2 8 6" /></>,
@@ -15,7 +14,10 @@ const paths: Record<IconName, React.ReactNode> = {
   referral: <><path d="M4 18V9a3 3 0 0 1 3-3h10" /><path d="M14 3l4 3-4 3" /></>,
   building: <><rect x="4" y="3" width="16" height="18" /><path d="M9 7h2M13 7h2M9 11h2M13 11h2M9 15h2M13 15h2M10 21v-3h4v3" /></>,
   numbers: <><path d="M5 17V7l4 10V7" /><path d="M13 7h5l-3 10" /></>,
+  paper: <><path d="M6 3h12v18H6z" /><path d="M9 8h6M9 12h6M9 16h4" /></>,
+  pen: <><path d="M4 20l4-1 11-11-3-3L5 16z" /><path d="M13 7l3 3" /></>,
+  eye: <><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z" /><circle cx="12" cy="12" r="3" /></>,
 };
-export const Icon: React.FC<{ name: IconName; size?: number; color?: string }> = ({ name, size = 44, color = "#0070B8" }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">{paths[name]}</svg>
+export const Icon: React.FC<{ name: IconName; size?: number; color?: string; stroke?: number }> = ({ name, size = 44, color = "#0070B8", stroke = 1.8 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={stroke} strokeLinecap="round" strokeLinejoin="round">{paths[name]}</svg>
 );
