@@ -49,7 +49,9 @@ export function flagsFor(cur: Survey | null, prev: Survey | null) {
 /** Today's (or a given day's) clinic list for a physio (or all physios when physioId is null). */
 export async function clinicList(physioId: number | null, day = new Date()) {
   const q = await db();
-  const start = new Date(day); start.setHours(0, 0, 0, 0); const end = new Date(start); end.setDate(end.getDate() + 1);
+  // Day boundaries in Singapore time, whatever the server's own time zone is (Vercel runs in UTC).
+  const start = new Date(day.toLocaleDateString("en-CA", { timeZone: "Asia/Singapore" }) + "T00:00:00+08:00");
+  const end = new Date(start.getTime() + 24 * 60 * 60 * 1000);
   const rows = await q<{ appt_id: number; scheduled_at: string; kind: string; patient_id: number; name: string; gender: string | null; birthday: string | null; diagnosis: string; region: string; physio_name: string | null; survey_id: number | null }>(
     `SELECT a.id AS appt_id, a.scheduled_at::text, a.kind, u.id AS patient_id, u.name, u.gender, u.birthday::text AS birthday, r.diagnosis, r.region, p.name AS physio_name, s.id AS survey_id
      FROM appointments a JOIN users u ON u.id = a.patient_id JOIN referrals r ON r.id = a.referral_id LEFT JOIN users p ON p.id = a.physio_id LEFT JOIN surveys s ON s.appointment_id = a.id
