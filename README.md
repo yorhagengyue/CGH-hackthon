@@ -1,73 +1,104 @@
-# CGH Physio PROMs — H.A.T. Incubator 2026, Project #1 (Team 1B)
+# CGH Physio PROMs — H.A.T. Incubator 2026, Project #1, Team 1B
 
-**Live:** https://cgh-physio-proms.vercel.app · demo accounts on the landing page, password `demo1234`
+**Live web app:** https://cgh-physio-proms.vercel.app · **iOS app:** https://github.com/yorhagengyue/CGH-ios (private) · same backend, same accounts
 
-Digital patient-reported outcomes (EQ-5D-5L) for outpatient physiotherapy. Patients, or their
-children on their behalf, answer the questionnaire online before each visit; the physiotherapist
-sees scores and progress in real time; doctors refer with one click; the head of department sees
-the whole service. No paper form, no manual transcription.
+Digital patient-reported outcomes (EQ-5D-5L) for outpatient physiotherapy at Changi General Hospital.
+Patients, or their children on their behalf, answer the questionnaire on their phone before each visit.
+The physiotherapist opens the clinic list and sees today's answers next to last visit's. No paper form,
+no manual transcription, and the data is there for longitudinal tracking and research.
 
-## Five portals
+## What it does
 
-| Role | Logs in with | Sees / does |
+- **Five roles, one account system.** Patient and caregiver (NRIC + password), doctor, physiotherapist and
+  head of department (staff ID + password). The iOS app and the web app share the same accounts and database.
+- **EQ-5D-5L questionnaire** on the phone: five questions, pain 0–10, overall health 0–100. About two minutes.
+  One submission per appointment; a caregiver can answer for a parent.
+- **Plain-language results for the patient.** One sentence ("You are doing better than last visit"), a trend chart
+  with the numbers on it (overall health, the five questions, pain; higher on the chart is always better), and a
+  record browser to look back at every questionnaire. No index values, no arrows.
+- **Reminders only for a questionnaire that is still not done**: SMS 7 days, 1 day and 2 hours before the visit,
+  to the patient and to approved caregivers. Nothing is sent once the questionnaire is in.
+- **Parents approve their children.** A caregiver link is pending until the parent taps Allow; until then the
+  caregiver sees nothing.
+- **Clinician search**: NRIC or name, diagnosis keyword or code (typed, with suggestions), age range, months
+  post-op. Physiotherapists see their own patients, doctors and the HOD see everybody. Click a patient → the trend
+  first, then the EQ-5D-5L profile, scores with explanations, and **Copy note for clinical document** (Citrix).
+- **Doctor referral** in one step: diagnosis, body region, assigned therapist, first appointment.
+- **HOD view**: how many of today's patients have answered, outcomes by body region, workload by therapist.
+
+## Demo accounts (password `demo1234`)
+
+| Role | Account | Notes |
 |---|---|---|
-| **Patient** (parent) | NRIC + password | Profile, calendar, survey, notifications; own previous answers and progress charts |
-| **Caregiver** (child) | NRIC + password, linked to one or more parents by relationship | Opens the parent's page, fills the survey on their behalf, gets the same SMS reminders |
-| **Doctor** | Staff ID + password | Creates referrals (diagnosis, region, assign physio, first appointment); full data of every patient |
-| **Physiotherapist** | Staff ID + password | Today's clinic list (submitted / pending, pain, EQ-5D profile, index, EQ-VAS, change vs last visit), only their own referred patients, one-click clinical-document note, schedule next visit |
-| **HOD / clinician** | Staff ID + password | All patients, outcomes by body region, workload by physio, department-wide clinic list |
+| Patient (father) | S1234567A | Tan Wei Ming, knee OA, 4 months post-op; questionnaire for today's 2 pm visit pending; one caregiver request waiting for Allow |
+| Patient (mother) | S2345678B | Lim Siew Hoon, low back pain; questionnaire for today's 3 pm visit pending |
+| Caregiver (daughter) | S3456789C | Tan Mei Ling; approved for the mother, pending for the father |
+| Doctor | D001 | Dr Koh Jun Wei |
+| Physiotherapist | P001 · P002 · P003 | Sheik Ashiddiq (the demo family's therapist), Charmaine Oh, Leow Jo Lene |
+| Head of Department | H001 | Dr Lim Hwee Boon |
 
-SMS reminders go out **7 days, 1 day and 2 hours** before every appointment, only while the questionnaire is still not done (simulated outbox at `/sms`;
-set `TWILIO_*` to send for real; `GET /api/sms` is the cron dispatcher).
-
-## Run locally
-
-```bash
-cd web
-cp .env.example .env.local      # put the Neon DATABASE_URL in; without it a local PGlite DB is used
-npm install
-npm run dev                     # http://localhost:3000
-```
-
-First start creates the tables and seeds demo data (the CGH referral extract + synthetic
-identities and EQ-5D history). Demo accounts are listed on the landing page, password `demo1234`.
+Forty more patients are synthesised from the CGH referral extract (real age bands, sex, diagnoses; names and
+NRICs invented). Search `knee`, `osteo`, `3594`, or post-op 3–6 months to find them.
 
 ## Demo reset
 
 The database is shared by local dev, production and the iOS app, so a rehearsal uses up the demo state.
-One command puts the demo family back, without touching any other patient:
+One command puts the demo family back without touching any other patient:
 
 ```bash
 cd web && npm run demo:reset
 ```
 
-Afterwards: the daughter (S3456789C) is accepted for the mother (S2345678B) and **pending** for the
-father (S1234567A), who has a fresh "Allow?" card; both parents' questionnaires for today are cleared
-so "Fill in questionnaire" shows again; the daughter is not acting as anyone.
+Afterwards: the daughter is accepted for the mother and **pending** for the father (fresh Allow card), both
+parents' questionnaires for today are cleared, the daughter is not acting as anyone. Surgery dates and the
+other patients are untouched.
+
+## Run locally
+
+```bash
+cd web
+cp .env.example .env.local      # DATABASE_URL (Neon); leave it empty to use a local PGlite database
+npm install
+npm run dev                     # http://localhost:3000
+```
+
+First start creates the tables (idempotent `CREATE/ALTER … IF NOT EXISTS`) and seeds the demo data if the
+database is empty. In development `/api/dev-login?as=P001&next=/physio` switches role in one click.
 
 ## Deploy (Vercel + Neon)
 
-Deployed with the Vercel CLI from `web/` (`vercel link --project cgh-physio-proms`, `vercel --prod`). To redeploy after a push: `cd web && vercel --prod`.
+Deployed from `web/` with the Vercel CLI: `vercel link --project cgh-physio-proms`, then `vercel --prod`.
+Environment variables: `DATABASE_URL` (Neon), `APP_URL` (used in SMS links), `CRON_SECRET`; optional
+`TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_FROM` to send real SMS (otherwise the outbox at `/sms`
+simulates them). `vercel.json` runs the SMS dispatcher (`GET /api/sms`) daily at 09:00 SGT.
 
-1. Project root directory is `web`.
-2. Environment variables: `DATABASE_URL` (Neon), `APP_URL` (the Vercel URL, used in SMS links),
-   optionally `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_FROM`, `CRON_SECRET`.
-3. `vercel.json` schedules the SMS dispatcher daily at 09:00 SGT.
+## API for the iOS app (`/api/v1`)
 
-## Stack
+Bearer token from `POST /api/v1/auth/login` (same `sessions` table as the web cookie). Endpoints: `me`,
+`patient/bundle`, `survey`, `notifications`, `patient/link-requests` (+ `POST …/:id {accept}`),
+`caregiver/parents`, `caregiver/act-as`, `physio/clinic`, `physio/patients`, `patients/:id`,
+`patients/search` (`q`, `diagnosis`, `min_age`, `max_age`, `postop=3-6` or `postop_min_months`/`postop_max_months`),
+`referral`, `appointment`, `doctor/patients`, `hod/overview`.
 
-Next.js 16 (App Router, server actions) · React 19 · Tailwind 4 · Postgres on Neon (`pg`),
-PGlite for local dev · cookie sessions, scrypt password hashes · no external UI or chart libraries.
+## Stack and layout
+
+Next.js 16 (App Router, server actions) · React 19 · Tailwind 4 · Postgres on Neon via `pg` (PGlite locally) ·
+cookie sessions, scrypt password hashes · no UI or chart library (inline SVG).
 
 ```
-web/app         pages: /login /register /patient /survey /caregiver /doctor /physio /hod /patients/[id] /sms
-web/app/actions.ts   all server actions (login, register, link parent, submit survey, referral, appointment, SMS)
-web/lib/schema.ts    tables: users, care_links, referrals, appointments, surveys, notifications, sessions
-web/lib/eq5d.ts      EQ-5D-5L scoring (value set table, MCID flags), questionnaire wording
-web/lib/seed.ts      demo data from inputs/referrals.json (CGH extract)
-web/lib/notify.ts    SMS/app notifications, Twilio dispatcher
-web/components       UI, trend charts (inline SVG), patient detail, copy-to-clinical-document
+web/app                pages: / login register patient survey caregiver doctor physio hod patients/[id] sms
+web/app/actions.ts     server actions (login, register, link + approve parent, survey, referral, appointment, SMS)
+web/app/api/v1         JSON API for iOS
+web/lib/schema.ts      users, care_links (status), referrals (surgery_date), appointments, surveys, notifications, sessions
+web/lib/eq5d.ts        EQ-5D-5L scoring (value set table, MCID flags), questionnaire wording
+web/lib/plain.ts       plain-language verdicts and wording for patients
+web/lib/search.ts      clinician search
+web/lib/notify.ts      questionnaire reminders (7d / 1d / 2h), Twilio dispatcher
+web/lib/seed.ts        demo data from lib/referrals.json (the CGH extract)
+web/components         ProgressTrend (interactive chart), RecordsBrowser, PatientSearch, PatientDetail, LinkRequestCard …
+web/scripts            demo-reset.mjs, backfill-surgery.mjs, requeue-reminders.mjs
+docs/                  screenshots, SUBMISSION_DRAFT.md
 ```
 
-Index values use the England 2018 EQ-5D-5L value set as a placeholder; swap in the Singapore
-value set in `web/lib/eq5d.ts` before clinical use.
+Index values use the England 2018 EQ-5D-5L value set as a placeholder; swap in the Singapore value set in
+`web/lib/eq5d.ts` before clinical use.
