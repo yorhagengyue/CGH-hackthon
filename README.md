@@ -1,5 +1,7 @@
 # CGH Physio PROMs — H.A.T. Incubator 2026, Project #1 (Team 1B)
 
+**Live:** https://cgh-physio-proms.vercel.app · demo accounts on the landing page, password `demo1234`
+
 Digital patient-reported outcomes (EQ-5D-5L) for outpatient physiotherapy. Patients, or their
 children on their behalf, answer the questionnaire online before each visit; the physiotherapist
 sees scores and progress in real time; doctors refer with one click; the head of department sees
@@ -32,7 +34,9 @@ identities and EQ-5D history). Demo accounts are listed on the landing page, pas
 
 ## Deploy (Vercel + Neon)
 
-1. Import this repo in Vercel, root directory `web`.
+Deployed with the Vercel CLI from `web/` (`vercel link --project cgh-physio-proms`, `vercel --prod`). To redeploy after a push: `cd web && vercel --prod`.
+
+1. Project root directory is `web`.
 2. Environment variables: `DATABASE_URL` (Neon), `APP_URL` (the Vercel URL, used in SMS links),
    optionally `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_FROM`, `CRON_SECRET`.
 3. `vercel.json` schedules the SMS dispatcher daily at 09:00 SGT.
