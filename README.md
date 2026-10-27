@@ -16,8 +16,10 @@ no manual transcription, and the data is there for longitudinal tracking and res
 - **Plain-language results for the patient.** One sentence ("You are doing better than last visit"), a trend chart
   with the numbers on it (overall health, the five questions, pain; higher on the chart is always better), and a
   record browser to look back at every questionnaire. No index values, no arrows.
-- **Reminders only for a questionnaire that is still not done**: SMS 7 days, 1 day and 2 hours before the visit,
-  to the patient and to approved caregivers. Nothing is sent once the questionnaire is in.
+- **Reminders only for a questionnaire that is still not done**: SMS the day before at 09:00 and 2 hours before the
+  visit, to the patient and to approved caregivers. Nothing is sent once the questionnaire is in. The Twilio channel is
+  wired up (merged from Dylan's branch); a Twilio trial account can only send its preset templates, so the live demo runs
+  in simulated mode (outbox at `/sms`). Upgrading the Twilio account is all that is needed for real delivery.
 - **Parents approve their children.** A caregiver link is pending until the parent taps Allow; until then the
   caregiver sees nothing.
 - **Clinician search**: NRIC or name, diagnosis keyword or code (typed, with suggestions), age range, months
