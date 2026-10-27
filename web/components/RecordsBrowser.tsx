@@ -24,9 +24,12 @@ export function RecordsBrowser({ points }: { points: SurveyPoint[] }) {
     <div className="text-[26px] font-extrabold text-cgh-ink mt-4">{p.date}</div>
     <div className="text-sm text-slate-500">Questionnaire {i + 1} of {points.length} · filled in by {p.filled_by}{prev ? ` · compared with ${prev.date}` : ""}</div>
     <div className="divide-y divide-slate-100 mt-3">
-      {ROWS.map((r) => <div key={r.key} className="py-2.5 flex items-center gap-3"><span className="w-44 text-slate-600">{r.name}</span><span className="flex-1 font-semibold text-cgh-ink">{LEVEL[p[r.key]]}</span><span className="w-6 text-center font-extrabold tabular-nums">{p[r.key]}</span><span className="w-14 text-right"><Mark v={cmp(p[r.key], prev?.[r.key])} /></span></div>)}
-      <div className="py-2.5 flex items-center gap-3"><span className="w-44 text-slate-600">Pain</span><span className="flex-1 font-semibold text-cgh-ink">{p.pain} out of 10</span><span className="w-6" /><span className="w-14 text-right"><Mark v={cmp(p.pain, prev?.pain)} /></span></div>
-      <div className="py-2.5 flex items-center gap-3"><span className="w-44 text-slate-600">Health today</span><span className="flex-1 font-semibold text-cgh-ink">{p.health} out of 100</span><span className="w-6" /><span className="w-14 text-right"><Mark v={cmp(p.health, prev?.health, false)} /></span></div>
+      {ROWS.map((r) => <div key={r.key} className="py-2.5">
+        <div className="flex items-center justify-between"><span className="text-slate-600">{r.name}</span><Mark v={cmp(p[r.key], prev?.[r.key])} /></div>
+        <div className="font-semibold text-cgh-ink whitespace-nowrap">{LEVEL[p[r.key]]} <span className="text-slate-400 font-normal">·</span> <span className="tabular-nums">{p[r.key]}</span></div>
+      </div>)}
+      <div className="py-2.5 flex items-center justify-between"><span className="font-semibold text-cgh-ink whitespace-nowrap">Pain <span className="text-slate-400 font-normal">·</span> {p.pain} out of 10</span><Mark v={cmp(p.pain, prev?.pain)} /></div>
+      <div className="py-2.5 flex items-center justify-between"><span className="font-semibold text-cgh-ink whitespace-nowrap">Health today <span className="text-slate-400 font-normal">·</span> {p.health} out of 100</span><Mark v={cmp(p.health, prev?.health, false)} /></div>
     </div>
   </div>;
 }

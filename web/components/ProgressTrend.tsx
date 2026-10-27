@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 export type SurveyPoint = { id: number; date: string; label: string; mo: number; sc: number; ua: number; pd: number; ad: number; pain: number; health: number; filled_by: string };
 type Series = "pain" | "health" | "dims";
@@ -15,7 +15,11 @@ const EXPLAIN: Record<Series, string> = {
 
 export function ProgressTrend({ points }: { points: SurveyPoint[] }) {
   const [series, setSeries] = useState<Series>("pain");
-  const W = 640, H = 260, pl = 40, pr = 16, pt = 28, pb = 34;
+  // Draw at the container's real pixel width so text stays readable on a phone (no viewBox scaling).
+  const box = useRef<HTMLDivElement>(null);
+  const [W, setW] = useState(640);
+  useEffect(() => { const el = box.current; if (!el) return; const ro = new ResizeObserver(() => setW(Math.max(300, Math.floor(el.clientWidth)))); ro.observe(el); setW(Math.max(300, Math.floor(el.clientWidth))); return () => ro.disconnect(); }, []);
+  const H = W < 640 ? 220 : 260, pl = 40, pr = 16, pt = 30, pb = 34;
   const max = series === "pain" ? 10 : series === "health" ? 100 : 5, min = series === "dims" ? 1 : 0;
   const ticks = series === "pain" ? [0, 2, 4, 6, 8, 10] : series === "health" ? [0, 25, 50, 75, 100] : [1, 2, 3, 4, 5];
   const xs = (i: number) => points.length === 1 ? (pl + W - pr) / 2 : pl + (i * (W - pl - pr)) / (points.length - 1);
@@ -27,14 +31,14 @@ export function ProgressTrend({ points }: { points: SurveyPoint[] }) {
   return <div className="bg-white rounded-2xl shadow-card p-5">
     <div className="flex flex-wrap items-center gap-2">{tab("pain", "Pain (0–10)")}{tab("health", "Health today (0–100)")}{tab("dims", "The five questions (1–5)")}
       <details className="ml-auto text-sm"><summary className="cursor-pointer text-cgh-blue font-bold list-none">What is this?</summary><p className="text-slate-600 mt-1 max-w-sm">{EXPLAIN[series]}</p></details></div>
-    {points.length === 0 ? <p className="text-slate-500 mt-4">Your first questionnaire will appear here.</p> : <svg viewBox={`0 0 ${W} ${H}`} className="w-full mt-3">
+    <div ref={box} className="w-full">{points.length === 0 ? <p className="text-slate-500 mt-4">Your first questionnaire will appear here.</p> : <svg viewBox={`0 0 ${W} ${H}`} width={W} height={H} className="mt-3 block max-w-full">
       {ticks.map((t) => <g key={t}><line x1={pl} x2={W - pr} y1={ys(t)} y2={ys(t)} stroke="#e2e8f0" /><text x={pl - 8} y={ys(t) + 4} fontSize="11" textAnchor="end" fill="#64748b">{t}</text></g>)}
       {lines.map((l) => <g key={l.name}>
-        <path d={l.vals.map((v, i) => `${i ? "L" : "M"}${xs(i)},${ys(v)}`).join(" ")} fill="none" stroke={l.color} strokeWidth={lines.length > 1 ? 2 : 3} strokeLinejoin="round" />
-        {l.vals.map((v, i) => <g key={i}><circle cx={xs(i)} cy={ys(v)} r={lines.length > 1 ? 3.5 : 5} fill="#fff" stroke={l.color} strokeWidth="2.5" />{(lines.length === 1 || i === l.vals.length - 1) && <text x={xs(i)} y={ys(v) - 11} fontSize={lines.length > 1 ? 11 : 14} fontWeight="800" textAnchor="middle" fill={l.color}>{v}</text>}</g>)}
+        <path d={l.vals.map((v, i) => `${i ? "L" : "M"}${xs(i)},${ys(v)}`).join(" ")} fill="none" stroke={l.color} strokeWidth={2.5} strokeLinejoin="round" />
+        {l.vals.map((v, i) => <g key={i}><circle cx={xs(i)} cy={ys(v)} r={lines.length > 1 ? 4 : 5} fill="#fff" stroke={l.color} strokeWidth="2.5" />{(lines.length === 1 || i === l.vals.length - 1) && <text x={xs(i)} y={ys(v) - 11} fontSize="13" fontWeight="800" textAnchor="middle" fill={l.color}>{v}</text>}</g>)}
       </g>)}
       {points.map((p, i) => <text key={p.id} x={xs(i)} y={H - 12} fontSize="11" textAnchor="middle" fill="#64748b">{p.label}</text>)}
-    </svg>}
+    </svg>}</div>
     {lines.length > 1 && <div className="flex flex-wrap gap-3 mt-2 text-xs">{lines.map((l) => <span key={l.name} className="inline-flex items-center gap-1.5"><i className="w-3 h-3 rounded-full" style={{ background: l.color }} />{l.name}</span>)}</div>}
   </div>;
 }
