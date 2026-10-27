@@ -38,6 +38,7 @@ Dylan Yeo, Geng Yue, Charmaine Oh (CGH), Heng Lexuan Lovelle, Raelene Foo Shu Ya
 3. Rewrote the patient side in plain language after two rounds of feedback (see below): one card on the overview (next visit + button + one-sentence verdict), a trend chart with the numbers on it (overall health, the five questions, pain; higher on the chart is always better), and a record browser for every previous questionnaire. No index values, no profile strings, no arrows.
 4. Built the clinician side: today's clinic list (time · name · Improved / Stable / Worse / Awaiting), **search** by NRIC or name, diagnosis keyword or code (typed, with suggestions), age range and months post-op; patient detail with the trend first, then the EQ-5D-5L profile, the scores with explanations, and one-click **Copy note for clinical document** (Citrix). Doctor referral in one step; HOD view with outcomes by region and workload by therapist.
 5. Reminders only for a questionnaire that is still not done: SMS the day before at 09:00 and 2 hours before the visit, to the patient and approved caregivers. The Twilio channel is connected; a Twilio trial account cannot send custom text (only preset templates), so the demo runs in simulated mode and shows the outbox. Upgrading the account enables real delivery with no code change. Dispatched by a daily Vercel cron plus page-load dispatch.
+7. Web Push to the patient's phone: a "Turn on reminders" button on the overview registers a browser push subscription (VAPID, service worker); the questionnaire reminders, family requests and clinician alerts are then delivered as push notifications in addition to the in-app list and the SMS outbox.
 6. Loaded the 72 CGH referrals (synthetic identities), added a demo-reset script, deployed to Vercel with Neon Postgres.
 
 **User feedback and what changed.** We showed the patient side to a physiotherapist and to lay testers during the day.
@@ -55,6 +56,7 @@ Dylan Yeo, Geng Yue, Charmaine Oh (CGH), Heng Lexuan Lovelle, Raelene Foo Shu Ya
 ## 6. Tools Used
 
 - Next.js 16 (App Router, server actions) + React 19 + TypeScript — the web app: five role portals, patient questionnaire, server-side API
+- Web Push (VAPID via the `web-push` package, service worker) — phone notifications for reminders and alerts
 - Tailwind CSS 4 — styling with the CGH brand palette; inline SVG for trend charts (no chart library)
 - PostgreSQL on Neon (cloud) via `pg`; PGlite (Postgres in WASM) for local development with identical SQL
 - Vercel — hosting; Vercel Cron hits `/api/sms` daily to dispatch reminders

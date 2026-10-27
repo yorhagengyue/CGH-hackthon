@@ -2,6 +2,7 @@
 // Reminders go out the day before at 09:00 and 2 hours before the visit, only while the questionnaire is still not done.
 // Twilio sending + bearer-protected dispatcher merged from Dylan's temp/sms-api (0404e4a).
 import "server-only";
+import { sendPushToUser } from "./push";
 
 type Q = (sql: string, params?: unknown[]) => Promise<Record<string, unknown>[]>;
 
@@ -39,6 +40,7 @@ export async function scheduleReminders(q: Q, appointmentId: number, patientId: 
 
 export async function notifyApp(q: Q, userId: number, kind: string, message: string, appointmentId: number | null = null) {
   await q(`INSERT INTO notifications(user_id, appointment_id, channel, kind, message, send_at, sent_at) VALUES ($1,$2,'app',$3,$4,now(),now())`, [userId, appointmentId, kind, message]);
+  await sendPushToUser(q, userId, kind === "alert" ? "Needs attention" : "CGH Physio", message, kind === "alert" ? "/physio" : "/patient?tab=notifications").catch(() => undefined);
 }
 
 // ---------- Twilio ----------
@@ -72,6 +74,7 @@ export async function dispatchDue(q: Q): Promise<DispatchSummary> {
   const due = await q(`SELECT n.id, n.message, n.user_id, n.kind, u.phone FROM notifications n JOIN users u ON u.id = n.user_id WHERE n.channel='sms' AND n.sent_at IS NULL AND n.send_at <= now() ORDER BY n.send_at`);
   const summary: DispatchSummary = { processed: due.length, sent: 0, simulated: 0, failed: 0, errors: [] };
   for (const d of due) {
+    if (String(d.kind).startsWith("reminder")) await sendPushToUser(q, Number(d.user_id), "Questionnaire reminder", String(d.message).replace(/https?:\S+/, "").trim(), "/patient").catch(() => undefined);
     if (!d.phone) { summary.failed++; summary.errors.push(`notification ${d.id}: no phone number`); continue; }
     try {
       if (config) { const sid = await sendWithTwilio(config, String(d.phone), String(d.message)); await q("UPDATE notifications SET sent_at = now(), provider_ref = $2 WHERE id = $1", [d.id, sid]); summary.sent++; }

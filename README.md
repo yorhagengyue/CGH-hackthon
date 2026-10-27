@@ -20,6 +20,11 @@ no manual transcription, and the data is there for longitudinal tracking and res
   visit, to the patient and to approved caregivers. Nothing is sent once the questionnaire is in. The Twilio channel is
   wired up (merged from Dylan's branch); a Twilio trial account can only send its preset templates, so the live demo runs
   in simulated mode (outbox at `/sms`). Upgrading the Twilio account is all that is needed for real delivery.
+- **Web Push on the phone.** On the patient overview, **Turn on reminders** asks for notification permission once
+  (works on Android Chrome and on iPhone when the site is added to the Home Screen). After that the questionnaire
+  reminders, family requests and other notices also arrive as push notifications; physiotherapists and doctors who turn
+  it on get the "Needs attention" alerts. Keys: `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`,
+  `NEXT_PUBLIC_VAPID_PUBLIC_KEY`; subscriptions live in `push_subscriptions`; the service worker is `public/sw.js`.
 - **Parents approve their children.** A caregiver link is pending until the parent taps Allow; until then the
   caregiver sees nothing.
 - **Clinician search**: NRIC or name, diagnosis keyword or code (typed, with suggestions), age range, months
