@@ -26,7 +26,7 @@ try {
     ON CONFLICT (caregiver_id, patient_id) DO UPDATE SET status='pending', responded_at=NULL RETURNING id`, [dau, dad]);
   await q("DELETE FROM notifications WHERE kind='link_request' AND user_id = $1", [dad]);
   await q(`INSERT INTO notifications(user_id, channel, kind, message, send_at, sent_at, link_id) VALUES ($1,'app','link_request',$2,now(),now(),$3)`,
-    [dad, `${ids[DAUGHTER].name} says she is your daughter and wants to help with your questionnaires. Allow?`, link.id]);
+    [dad, `${ids[DAUGHTER].name} (your daughter) asks to help with your questionnaires. Allow?`, link.id]);
   // daughter -> mother: accepted
   await q(`INSERT INTO care_links(caregiver_id, patient_id, relationship, status, responded_at) VALUES ($1,$2,'daughter','accepted',now())
     ON CONFLICT (caregiver_id, patient_id) DO UPDATE SET status='accepted', responded_at=now()`, [dau, mum]);

@@ -12,19 +12,17 @@ export async function scheduleReminders(q: Q, appointmentId: number, patientId: 
   const base = process.env.APP_URL ?? "http://localhost:3000";
   const link = `${base}/survey?appt=${appointmentId}`;
   const when = fmt(scheduledAt);
-  const rows: [string, number, string][] = [
-    ["reminder_7d", 7, `CGH Physiotherapy: your appointment is on ${when}. Please complete your 2-minute health questionnaire before the visit: ${link}`],
-    ["reminder_3d", 3, `Reminder: physiotherapy appointment on ${when}. If you have not yet done so, please complete your questionnaire: ${link}`],
-  ];
-  for (const [kind, days, message] of rows) {
-    const sendAt = new Date(scheduledAt); sendAt.setDate(sendAt.getDate() - days); sendAt.setHours(9, 0, 0, 0);
-    await q(`INSERT INTO notifications(user_id, appointment_id, channel, kind, message, send_at) VALUES ($1,$2,'sms',$3,$4,$5)`, [patientId, appointmentId, kind, message, sendAt.toISOString()]);
-    // caregivers linked to the patient get the same SMS
-    const cg = await q("SELECT caregiver_id FROM care_links WHERE patient_id = $1", [patientId]);
-    for (const c of cg) await q(`INSERT INTO notifications(user_id, appointment_id, channel, kind, message, send_at) VALUES ($1,$2,'sms',$3,$4,$5)`, [c.caregiver_id, appointmentId, kind, `[For your parent] ${message}`, sendAt.toISOString()]);
+  const msg = `CGH Physiotherapy: you have not yet done your questionnaire for your visit on ${when}. Please complete it before the visit: ${link}`;
+  const cg = await q("SELECT caregiver_id FROM care_links WHERE patient_id = $1 AND status = 'accepted'", [patientId]);
+  const slots: [string, number][] = [["reminder_7d", 7 * 24], ["reminder_1d", 24], ["reminder_2h", 2]];
+  for (const [kind, hours] of slots) {
+    const sendAt = new Date(new Date(scheduledAt).getTime() - hours * 3600 * 1000);
+    if (hours >= 24) sendAt.setHours(9, 0, 0, 0);
+    await q(`INSERT INTO notifications(user_id, appointment_id, channel, kind, message, send_at) VALUES ($1,$2,'sms',$3,$4,$5)`, [patientId, appointmentId, kind, msg, sendAt.toISOString()]);
+    for (const c of cg) await q(`INSERT INTO notifications(user_id, appointment_id, channel, kind, message, send_at) VALUES ($1,$2,'sms',$3,$4,$5)`, [c.caregiver_id, appointmentId, kind, `[For your parent] ${msg}`, sendAt.toISOString()]);
   }
-  await q(`INSERT INTO notifications(user_id, appointment_id, channel, kind, message, send_at, sent_at) VALUES ($1,$2,'app','appointment',$3,now(),now())`,
-    [patientId, appointmentId, `New physiotherapy appointment on ${when}. You will get an SMS 7 days and 3 days before.`]);
+  await q(`INSERT INTO notifications(user_id, appointment_id, channel, kind, message, send_at, sent_at) VALUES ($1,$2,'app','questionnaire',$3,now(),now())`,
+    [patientId, appointmentId, `Please fill in your questionnaire before your visit on ${when}.`]);
 }
 
 export async function notifyApp(q: Q, userId: number, kind: string, message: string, appointmentId: number | null = null) {
@@ -32,6 +30,8 @@ export async function notifyApp(q: Q, userId: number, kind: string, message: str
 }
 
 export async function dispatchDue(q: Q): Promise<number> {
+  // a reminder is only for a questionnaire that is still not done: drop the ones whose appointment already has one
+  await q(`DELETE FROM notifications WHERE channel='sms' AND sent_at IS NULL AND appointment_id IN (SELECT appointment_id FROM surveys WHERE appointment_id IS NOT NULL)`);
   const due = await q(`SELECT n.id, n.message, u.phone FROM notifications n JOIN users u ON u.id = n.user_id WHERE n.channel='sms' AND n.sent_at IS NULL AND n.send_at <= now()`);
   for (const d of due) {
     if (process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN && process.env.TWILIO_FROM && d.phone) {

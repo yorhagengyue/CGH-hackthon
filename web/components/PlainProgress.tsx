@@ -1,6 +1,8 @@
 import { patientBundle, type Survey } from "@/lib/data";
-import { DIMS, DIM_ICON, VERDICT_TEXT, changedLines, dimChange, dimName, dimPhrase, painLine, verdict } from "@/lib/plain";
-import { Card, LV_BG, Pill, TrendChart, fmtD, fmtDT, startOfTodaySG } from "./ui";
+import { DIMS, DIM_ICON, VERDICT_TEXT, dimChange, dimName, dimPhrase, verdict } from "@/lib/plain";
+import { Card, LV_BG, Pill, TrendChart, fmtD, fmtDT } from "./ui";
+import { ProgressTrend } from "./ProgressTrend";
+import { RecordsBrowser } from "./RecordsBrowser";
 
 const dLabel = (iso: string) => new Date(iso).toLocaleDateString("en-SG", { day: "numeric", month: "short", timeZone: "Asia/Singapore" });
 const TONE_BG = { ok: "bg-ok-bg text-ok", neutral: "bg-cgh-mist text-cgh-blue", warn: "bg-warn-bg text-warn" };
@@ -68,22 +70,18 @@ export function AnswersDetail({ surveys, caregiver = false }: { surveys: Survey[
   </div>;
 }
 
-/** First screen of the progress tab: the verdict as the headline, what changed, pain. Everything else behind one click. */
-export async function PlainProgress({ patientId, caregiver = false }: { patientId: number; caregiver?: boolean }) {
+/** Progress tab: the verdict as the headline, then the trend (with numbers) and the record browser. */
+export async function PlainProgress({ patientId }: { patientId: number; caregiver?: boolean }) {
   const b = await patientBundle(patientId);
   if (!b) return <p>Patient not found.</p>;
   const { surveys } = b;
   const cur = surveys.at(-1) ?? null, prev = surveys.at(-2) ?? null;
-  if (!cur) return <div className="max-w-xl"><h1 className="text-[30px]">No questionnaire yet</h1><p className="text-slate-600 mt-2">After your first questionnaire, this page tells you how you are doing compared with your last visit.</p></div>;
+  if (!cur) return <div className="max-w-xl"><h1 className="text-[30px]">No questionnaire yet</h1><p className="text-slate-600 mt-2">After your first questionnaire, this page shows your trend and your records.</p></div>;
   const v = verdict(cur, prev); const t = VERDICT_TEXT[v];
-  const lines = changedLines(cur, prev);
-  return <div className="max-w-xl">
+  const points = surveys.map((s) => ({ id: s.id, date: fmtD(s.submitted_at), label: dLabel(s.submitted_at), mo: s.mo, sc: s.sc, ua: s.ua, pd: s.pd, ad: s.ad, pain: s.pain, health: s.eq_vas, filled_by: s.filled_by_name }));
+  return <div className="max-w-3xl space-y-5">
     <h1 className={`text-[32px] ${t.tone === "ok" ? "text-ok" : t.tone === "warn" ? "text-warn" : "text-cgh-ink"}`}>{t.title}</h1>
-    <ul className="mt-5 space-y-2 text-lg">
-      {lines.map((l) => <li key={l} className="bg-white rounded-xl shadow-card px-4 py-3">{l}</li>)}
-      {prev && lines.length === 0 && <li className="bg-white rounded-xl shadow-card px-4 py-3">Your answers are the same as last time</li>}
-      <li className="bg-white rounded-xl shadow-card px-4 py-3">{painLine(cur, prev)}</li>
-    </ul>
-    <details className="mt-6 group"><summary className="cursor-pointer text-cgh-blue font-bold list-none inline-flex items-center gap-2">See all my answers<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="group-open:rotate-180 transition"><path d="M6 9l6 6 6-6" /></svg></summary><div className="mt-4"><AnswersDetail surveys={surveys} caregiver={caregiver} /></div></details>
+    <section><h2 className="text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500 mb-2">Trend</h2><ProgressTrend points={points} /></section>
+    <section><h2 className="text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500 mb-2">My records</h2><RecordsBrowser points={points} /></section>
   </div>;
 }

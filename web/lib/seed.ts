@@ -35,7 +35,7 @@ export async function seedIfEmpty(q: Q) {
   // the link to the father is still waiting for his Allow (demo: he taps Allow on his phone)
   const [pend] = await q("INSERT INTO care_links(caregiver_id, patient_id, relationship, status) VALUES ($1,$2,'daughter','pending') RETURNING id", [daughter, dad]);
   await q(`INSERT INTO notifications(user_id, channel, kind, message, send_at, sent_at, link_id) VALUES ($1,'app','link_request',$2,now(),now(),$3)`,
-    [dad, "Tan Mei Ling says she is your daughter and wants to help with your questionnaires. Allow?", pend.id]);
+    [dad, "Tan Mei Ling (your daughter) asks to help with your questionnaires. Allow?", pend.id]);
 
   // referrals from the CGH extract -> synthetic identities
   const today = new Date(); today.setHours(0, 0, 0, 0);

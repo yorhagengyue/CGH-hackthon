@@ -17,7 +17,7 @@ the whole service. No paper form, no manual transcription.
 | **Physiotherapist** | Staff ID + password | Today's clinic list (submitted / pending, pain, EQ-5D profile, index, EQ-VAS, change vs last visit), only their own referred patients, one-click clinical-document note, schedule next visit |
 | **HOD / clinician** | Staff ID + password | All patients, outcomes by body region, workload by physio, department-wide clinic list |
 
-SMS reminders go out **7 days and 3 days** before every appointment (simulated outbox at `/sms`;
+SMS reminders go out **7 days, 1 day and 2 hours** before every appointment, only while the questionnaire is still not done (simulated outbox at `/sms`;
 set `TWILIO_*` to send for real; `GET /api/sms` is the cron dispatcher).
 
 ## Run locally

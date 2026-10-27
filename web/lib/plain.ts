@@ -53,3 +53,6 @@ export function painLine(cur: Survey, prev: Survey | null): string {
   const cmp = prev ? (cur.pain < prev.pain ? ", less than last time" : cur.pain > prev.pain ? ", more than last time" : ", same as last time") : "";
   return `Pain ${cur.pain} out of 10${cmp}`;
 }
+
+/** "359420013 : Osteoarthritis of knee" -> "Osteoarthritis of knee" */
+export const plainDiagnosis = (d: string | null | undefined) => (d ?? "").replace(/^\s*\d+\s*:\s*/, "").trim() || "—";

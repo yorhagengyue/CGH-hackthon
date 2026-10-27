@@ -5,7 +5,6 @@ import { notifyApp } from "./notify";
 
 type Q = (sql: string, params?: unknown[]) => Promise<Record<string, unknown>[]>;
 
-const pronoun = (rel: string) => /daughter|mother|wife|grandmother|sister/i.test(rel) ? "she" : /son|father|husband|grandson|brother/i.test(rel) ? "he" : "they";
 const possessive = (gender: string | null | undefined) => gender === "MALE" ? "his" : gender === "FEMALE" ? "her" : "their";
 
 /** Create a pending link and ask the parent. Returns the link id (existing one if already there). */
@@ -14,9 +13,8 @@ export async function requestLink(q: Q, caregiver: { id: number; name: string },
   if (existing) return existing;
   const [row] = await q("INSERT INTO care_links(caregiver_id, patient_id, relationship, status) VALUES ($1,$2,$3,'pending') RETURNING id", [caregiver.id, parentId, relationship]);
   const id = row.id as number;
-  const verb = pronoun(relationship) === "they" ? "says they are" : `says ${pronoun(relationship)} is`;
   await q(`INSERT INTO notifications(user_id, channel, kind, message, send_at, sent_at, link_id) VALUES ($1,'app','link_request',$2,now(),now(),$3)`,
-    [parentId, `${caregiver.name} ${verb} your ${relationship} and wants to help with your questionnaires. Allow?`, id]);
+    [parentId, `${caregiver.name} (your ${relationship}) asks to help with your questionnaires. Allow?`, id]);
   return { id, status: "pending" };
 }
 
