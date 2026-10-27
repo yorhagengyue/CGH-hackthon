@@ -3,10 +3,11 @@ import { session } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { clinicList, levels } from "@/lib/data";
 import { Arrow, Card, Pill, ProfileBadge, fmtD, fmtDT } from "@/components/ui";
+import { PatientSearch } from "@/components/PatientSearch";
 
-export default async function Hod({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
+export default async function Hod({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
   const s = await session(); if (!s || s.user.role !== "hod") redirect("/login");
-  const { q: search = "" } = await searchParams;
+  const sp = await searchParams; const search = "";
   const q = await db();
   const kpi = (await q<{ patients: number; surveys: number; today: number; today_done: number; physios: number }>(`SELECT (SELECT COUNT(*)::int FROM users WHERE role='patient') AS patients, (SELECT COUNT(*)::int FROM surveys) AS surveys,
     (SELECT COUNT(*)::int FROM appointments WHERE scheduled_at::date = (now() AT TIME ZONE 'Asia/Singapore')::date AND status='scheduled') AS today,
@@ -23,6 +24,7 @@ export default async function Hod({ searchParams }: { searchParams: Promise<{ q?
      FROM users u LEFT JOIN LATERAL (SELECT * FROM referrals r WHERE r.patient_id = u.id ORDER BY r.created_at DESC LIMIT 1) r ON true LEFT JOIN users p ON p.id = r.physio_id
      WHERE u.role='patient' AND ($1 = '' OR u.name ILIKE '%' || $1 || '%' OR r.diagnosis ILIKE '%' || $1 || '%' OR p.name ILIKE '%' || $1 || '%') ORDER BY u.name`, [search]);
   return <div className="space-y-4">
+    <PatientSearch sp={sp} scope="all" action="/hod" />
     <div className="grid md:grid-cols-3 gap-4">{[[`${kpi.today_done} of ${kpi.today}`, "patients today have already answered their questionnaire"], [kpi.patients, "patients under physiotherapy, with " + kpi.surveys + " questionnaires on record"], [kpi.physios, "physiotherapists in the department"]].map(([n, l]) => <div key={String(l)} className="bg-white rounded-2xl shadow-card px-6 py-5"><div className="text-[36px] font-extrabold tabular-nums leading-none text-cgh-ink">{n}</div><div className="text-base text-slate-700 mt-2">{l}</div></div>)}</div>
     <details><summary className="cursor-pointer text-cgh-blue font-bold">Outcomes, workload and today's clinic</summary>
     <div className="grid lg:grid-cols-2 gap-4 mt-3">

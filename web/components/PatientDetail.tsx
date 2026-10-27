@@ -5,6 +5,7 @@ import { CopyButton } from "./CopyButton";
 import { ActionForm, Field, inputCls } from "./Form";
 import { createAppointmentAction } from "@/app/actions";
 import { VERDICT_TEXT, verdict } from "@/lib/plain";
+import { ProgressTrend } from "./ProgressTrend";
 
 const dLabel = (iso: string) => new Date(iso).toLocaleDateString("en-SG", { day: "numeric", month: "short", timeZone: "Asia/Singapore" });
 
@@ -22,6 +23,7 @@ export async function PatientDetail({ patientId, staff = false, self = false }: 
         {!self && <div className="mb-3"><div className="text-lg font-bold">{patient.name}</div><div className="text-slate-600 text-sm">{patient.login_id.slice(0, 1)}****{patient.login_id.slice(-4)} · {patient.gender ?? "-"} · {age(patient.birthday) ?? "-"} y · {patient.phone ?? "no phone"}{caregivers.some((c) => c.status === "accepted") && <> · caregivers: {caregivers.filter((c) => c.status === "accepted").map((c) => `${c.name} (${c.relationship})`).join(", ")}</>}</div></div>}
         {cur ? (() => { const v = verdict(cur, prev); const t = VERDICT_TEXT[v]; return <>
           <div className="mb-3"><Pill tone={t.tone}>{v === "first" ? "First questionnaire" : v === "better" ? "Improved since last visit" : v === "same" ? "Stable since last visit" : "Worse since last visit"}</Pill> <span className="text-xs text-slate-500 ml-2">submitted {fmtDT(cur.submitted_at)} by {cur.filled_by_name}</span></div>
+          <div className="mb-4"><ProgressTrend clinical points={surveys.map((s) => ({ id: s.id, date: fmtD(s.submitted_at), label: dLabel(s.submitted_at), mo: s.mo, sc: s.sc, ua: s.ua, pd: s.pd, ad: s.ad, pain: s.pain, health: s.eq_vas, filled_by: s.filled_by_name }))} /></div>
           <table className="tbl mb-3"><thead><tr><th>Dimension</th><th>Now · {fmtD(cur.submitted_at)}</th><th>{prev ? <>Last · {fmtD(prev.submitted_at)}</> : "Last"}</th></tr></thead><tbody>
             {DIMS.map((d) => <tr key={d}><td>{DIM_LABEL[d]}</td><td><span className={`inline-block w-6 text-center rounded font-bold ${LV_BG[cur[d]]}`}>{cur[d]}</span> <span className="text-slate-500">{LEVEL_LABEL[cur[d]]}</span></td><td>{prev ? <><span className={`inline-block w-6 text-center rounded font-bold ${LV_BG[prev[d]]}`}>{prev[d]}</span> <span className="text-slate-500">{LEVEL_LABEL[prev[d]]}</span></> : "—"}</td></tr>)}
           </tbody></table>
@@ -30,12 +32,7 @@ export async function PatientDetail({ patientId, staff = false, self = false }: 
             <li><b>EQ-5D-5L index {cur.index_value.toFixed(2)}</b>{prev && <> · last {prev.index_value.toFixed(2)}</>} <span className="text-slate-400">(0–1, higher is better, {VALUE_SET}{prev && fl.index !== "stable" ? ", change is clinically meaningful" : ""})</span></li>
             <li><b>EQ-VAS {cur.eq_vas}/100</b>{prev && <> · last {prev.eq_vas}</>} <span className="text-slate-400">(patient's own health rating, higher is better{prev && fl.vas !== "stable" ? ", change is clinically meaningful" : ""})</span></li>
           </ul>
-          <details className="mt-3"><summary className="cursor-pointer text-cgh-blue font-bold text-sm">Trend over visits</summary>
-            <div className="grid md:grid-cols-3 gap-3 mt-2">
-              <TrendChart points={surveys.map((s) => ({ x: dLabel(s.submitted_at), y: s.index_value }))} max={1} min={0} label="EQ-5D-5L index (0–1)" fmt={(v) => v.toFixed(2)} />
-              <TrendChart points={surveys.map((s) => ({ x: dLabel(s.submitted_at), y: s.eq_vas }))} max={100} min={0} color="#28a8e0" label="EQ-VAS (0–100)" />
-              <TrendChart points={surveys.map((s) => ({ x: dLabel(s.submitted_at), y: s.pain }))} max={10} min={0} color="#b91c1c" label="Pain (0–10)" />
-            </div></details>
+
           {staff && <div className="mt-3 flex gap-2 items-start"><CopyButton text={clinicalNote(patient, referrals[0]?.diagnosis, cur, prev, first)} /><details className="text-xs"><summary className="cursor-pointer text-slate-500 py-1.5">preview note</summary><pre className="bg-cgh-ink text-slate-100 p-3 rounded-lg whitespace-pre-wrap">{clinicalNote(patient, referrals[0]?.diagnosis, cur, prev, first)}</pre></details></div>}
         </>; })() : <p className="text-slate-500 text-sm">No questionnaire submitted yet.</p>}
       </Card>

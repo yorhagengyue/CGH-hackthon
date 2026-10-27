@@ -4,11 +4,14 @@ import { db } from "@/lib/db";
 import { clinicList } from "@/lib/data";
 import { DIMS, DIM_LABEL } from "@/lib/eq5d";
 import { VERDICT_TEXT, verdict } from "@/lib/plain";
+import { PatientSearch } from "@/components/PatientSearch";
+import { hasFilters, parseSearch } from "@/lib/search";
 import { Card, Pill, age, fmtD, fmtDT, fmtT } from "@/components/ui";
 
-export default async function Physio({ searchParams }: { searchParams: Promise<{ day?: string }> }) {
+export default async function Physio({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
   const s = await session(); if (!s || s.user.role !== "physio") redirect("/login");
-  const { day } = await searchParams;
+  const sp = await searchParams; const { day } = sp;
+  const searching = hasFilters(parseSearch(sp, "mine", s.user.id));
   const date = day ? new Date(day + "T00:00:00+08:00") : new Date();
   const list = await clinicList(s.user.id, date);
   const q = await db();
@@ -20,6 +23,8 @@ export default async function Physio({ searchParams }: { searchParams: Promise<{
   const notes = await q<{ message: string; send_at: string }>(`SELECT message, send_at::text FROM notifications WHERE user_id = $1 AND channel='app' ORDER BY send_at DESC LIMIT 5`, [s.user.id]);
   const nSub = list.filter((r) => r.cur).length;
   return <div className="space-y-4">
+    <PatientSearch sp={sp} scope="mine" physioId={s.user.id} action="/physio" />
+    {!searching && <>
     <Card tight title={`Clinic list · ${fmtD(date)}`} right={<form className="inline"><input type="date" name="day" defaultValue={date.toLocaleDateString("en-CA", { timeZone: "Asia/Singapore" })} className="border border-slate-300 rounded px-1 text-xs" /></form>}>
       <table className="tbl"><thead><tr><th>Time</th><th>Patient</th><th>Since last visit</th><th></th></tr></thead><tbody>
         {list.map((r) => { const v = r.cur ? verdict(r.cur, r.prev) : null; const t = v ? VERDICT_TEXT[v] : null; const why: string[] = [];
@@ -39,5 +44,6 @@ export default async function Physio({ searchParams }: { searchParams: Promise<{
         </tbody></table></Card>
         <Card title="Notifications">{notes.map((n, i) => <div key={i} className="text-sm py-1.5 border-b border-slate-100 last:border-0"><span className="text-xs text-slate-400 mr-1">{fmtDT(n.send_at)}</span>{n.message}</div>)}{notes.length === 0 && <p className="text-slate-400 text-sm">None.</p>}</Card>
       </div></details>
+    </>}
   </div>;
 }

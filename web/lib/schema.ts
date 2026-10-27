@@ -29,6 +29,7 @@ CREATE TABLE IF NOT EXISTS referrals (              -- doctor -> physio
   diagnosis TEXT NOT NULL,
   region TEXT NOT NULL,                              -- Knee, Shoulder, Lower back ...
   notes TEXT,
+  surgery_date DATE,                                 -- when the patient is post-operative
   status TEXT NOT NULL DEFAULT 'active',             -- active | discharged
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
@@ -76,6 +77,7 @@ ALTER TABLE care_links ADD COLUMN IF NOT EXISTS status TEXT NOT NULL DEFAULT 'ac
 ALTER TABLE care_links ADD COLUMN IF NOT EXISTS responded_at TIMESTAMPTZ;
 ALTER TABLE care_links ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ NOT NULL DEFAULT now();
 ALTER TABLE notifications ADD COLUMN IF NOT EXISTS link_id INT;
+ALTER TABLE referrals ADD COLUMN IF NOT EXISTS surgery_date DATE;
 CREATE INDEX IF NOT EXISTS idx_surveys_patient ON surveys(patient_id, submitted_at);
 CREATE INDEX IF NOT EXISTS idx_appts_patient ON appointments(patient_id, scheduled_at);
 `;
