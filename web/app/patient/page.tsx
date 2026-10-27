@@ -5,8 +5,6 @@ import { patientBundle } from "@/lib/data";
 import { PlainProgress } from "@/components/PlainProgress";
 import { VERDICT_TEXT, verdict } from "@/lib/plain";
 import { Card, Pill, fmtDT, fmtD, age, startOfTodaySG } from "@/components/ui";
-import { Nav } from "@/components/Nav";
-import { Suspense } from "react";
 import { markReadAction } from "../actions";
 
 export default async function PatientPage({ searchParams }: { searchParams: Promise<{ tab?: string; done?: string }> }) {
@@ -22,11 +20,10 @@ export default async function PatientPage({ searchParams }: { searchParams: Prom
   const next = b.appointments.find((a) => a.status === "scheduled" && new Date(a.scheduled_at) >= startOfTodaySG());
   const pending = b.appointments.filter((a) => a.status === "scheduled" && !a.survey_id && new Date(a.scheduled_at) >= startOfTodaySG());
   const cur = b.surveys.at(-1) ?? null, prev = b.surveys.at(-2) ?? null;
-  const tabs: [string, string][] = [["home", "Overview"], ["survey", "Survey"], ["progress", "Progress"], ["calendar", "Calendar"], ["notifications", `Notifications${unread ? ` (${unread})` : ""}`], ["profile", "Profile"]];
   return <div>
     {s.user.role === "caregiver" && <div className="mb-3 bg-warn-bg rounded-lg px-3 py-2 text-sm">You are viewing <b>{b.patient.name}</b>'s page as their caregiver. <a href="/caregiver" className="underline">Switch parent</a></div>}
     <h1 className="text-[30px]">{s.user.role === "caregiver" ? b.patient.name : `Hello, ${b.patient.name}`}</h1>
-    <div className="my-4 md:hidden"><Suspense><Nav items={tabs.map(([k, l]) => [k === "home" ? "/patient" : `/patient?tab=${k}`, l])} /></Suspense></div>
+    <div className="h-4" />
     {done && <div className="mb-3 bg-ok-bg rounded-lg px-3 py-2 text-sm">Thank you, your questionnaire has been sent to your physiotherapist.</div>}
     {tab === "home" && (() => { const v = verdict(cur, prev); const t = VERDICT_TEXT[v]; const today = next && new Date(next.scheduled_at).toLocaleDateString("en-CA", { timeZone: "Asia/Singapore" }) === new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Singapore" });
       return <div className="max-w-xl">
