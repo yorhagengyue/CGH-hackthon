@@ -1,4 +1,4 @@
-// GET /api/v1/patients/search?q=knee&region=Knee&min_age=50&max_age=70&postop=3-6   (or postop_min / postop_max in months)
+// GET /api/v1/patients/search?q=knee&region=Knee&min_age=50&max_age=70&postop=3-6   (or postop_min_months / postop_max_months, also postop_min / postop_max)
 // Physiotherapists see their own patients; doctors and HOD see everybody.
 import { isResponse, json, requireApi } from "@/lib/api";
 import { parseSearch, searchPatients } from "@/lib/search";

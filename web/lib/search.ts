@@ -51,5 +51,5 @@ export function parseSearch(sp: Record<string, string | undefined>, scope: "mine
   const num = (v: string | undefined) => v != null && v !== "" && !isNaN(Number(v)) ? Number(v) : null;
   const postop = sp.postop ?? "";
   const [pmin, pmax] = postop === "0-3" ? [0, 3] : postop === "3-6" ? [3, 6] : postop === "6-12" ? [6, 12] : postop === "12+" ? [12, null] : [null, null];
-  return { q: sp.q ?? "", region: sp.region || undefined, min_age: num(sp.min_age), max_age: num(sp.max_age), postop_min_months: num(sp.postop_min) ?? pmin, postop_max_months: num(sp.postop_max) ?? pmax, scope, physioId };
+  return { q: sp.q ?? "", region: sp.region || undefined, min_age: num(sp.min_age), max_age: num(sp.max_age), postop_min_months: num(sp.postop_min_months) ?? num(sp.postop_min) ?? pmin, postop_max_months: num(sp.postop_max_months) ?? num(sp.postop_max) ?? pmax, scope, physioId };
 }
