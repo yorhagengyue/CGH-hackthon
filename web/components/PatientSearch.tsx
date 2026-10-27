@@ -1,4 +1,4 @@
-import { REGIONS, hasFilters, parseSearch, searchPatients } from "@/lib/search";
+import { diagnosisOptions, hasFilters, parseSearch, searchPatients } from "@/lib/search";
 import { VERDICT_TEXT } from "@/lib/plain";
 import { Card, Pill, fmtD } from "./ui";
 
@@ -9,10 +9,11 @@ export async function PatientSearch({ sp, scope, physioId, action }: { sp: Recor
   const params = parseSearch(sp, scope, physioId);
   const active = hasFilters(params);
   const rows = active ? await searchPatients(params) : [];
+  const dx = await diagnosisOptions();
   return <div className="space-y-3">
     <form action={action} className="bg-white rounded-2xl shadow-card p-4 flex flex-wrap gap-2 items-end">
       <label className="flex-1 min-w-[260px] text-xs font-bold uppercase tracking-wide text-slate-500">Search<input name="q" defaultValue={sp.q ?? ""} placeholder="NRIC, diagnosis code or keyword (knee, hip, 110…)" className={`${inp} w-full mt-1 normal-case tracking-normal font-normal text-base`} /></label>
-      <label className="text-xs font-bold uppercase tracking-wide text-slate-500">Region<select name="region" defaultValue={sp.region ?? ""} className={`${inp} block mt-1 font-normal normal-case tracking-normal`}><option value="">Any</option>{REGIONS.map((r) => <option key={r}>{r}</option>)}</select></label>
+      <label className="text-xs font-bold uppercase tracking-wide text-slate-500">Diagnosis<select name="diagnosis" defaultValue={sp.diagnosis ?? ""} className={`${inp} block mt-1 font-normal normal-case tracking-normal max-w-[260px]`}><option value="">Any</option>{dx.map((g) => <optgroup key={g.region} label={g.region}>{g.items.map((d) => <option key={d.name} value={d.name}>{d.name} ({d.n})</option>)}</optgroup>)}</select></label>
       <label className="text-xs font-bold uppercase tracking-wide text-slate-500">Age<div className="flex gap-1 mt-1"><input name="min_age" type="number" min={0} max={120} defaultValue={sp.min_age ?? ""} placeholder="from" className={`${inp} w-20 font-normal`} /><input name="max_age" type="number" min={0} max={120} defaultValue={sp.max_age ?? ""} placeholder="to" className={`${inp} w-20 font-normal`} /></div></label>
       <label className="text-xs font-bold uppercase tracking-wide text-slate-500">Post-op<select name="postop" defaultValue={sp.postop ?? ""} className={`${inp} block mt-1 font-normal normal-case tracking-normal`}><option value="">Any</option><option value="0-3">0–3 months</option><option value="3-6">3–6 months</option><option value="6-12">6–12 months</option><option value="12+">12+ months</option></select></label>
       <button className="px-4 py-2 rounded-lg bg-cgh-blue text-white text-sm font-bold hover:bg-cgh-blue-dark">Search</button>
@@ -20,7 +21,7 @@ export async function PatientSearch({ sp, scope, physioId, action }: { sp: Recor
     </form>
     {active && <Card tight title="Results" right={`${rows.length} patient${rows.length === 1 ? "" : "s"}${scope === "mine" ? " of yours" : ""}`}>
       <table className="tbl"><thead><tr><th>Patient</th><th>Age · Sex</th><th>Diagnosis</th><th>Post-op</th><th>Last questionnaire</th><th>Since last visit</th></tr></thead><tbody>
-        {rows.map((r) => { const t = VERDICT_TEXT[r.verdict]; return <tr key={r.id}><td><a href={`/patients/${r.id}`} className="font-bold text-cgh-blue hover:underline">{r.name}</a><div className="text-xs text-slate-500">{r.login_id_masked}{r.physio_name && scope === "all" ? ` · ${r.physio_name}` : ""}</div></td><td className="whitespace-nowrap">{r.age ?? "-"} · {(r.gender ?? "-")[0]}</td><td>{r.diagnosis}<div className="text-xs text-slate-500">{r.region}</div></td><td className="whitespace-nowrap">{r.months_post_op != null ? `${r.months_post_op} months` : ""}</td><td className="whitespace-nowrap">{r.last_prom_at ? fmtD(r.last_prom_at) : <span className="text-slate-400">none</span>}<div className="text-xs text-slate-500">{r.n_proms} on record</div></td><td>{r.n_proms ? <Pill tone={t.tone}>{r.verdict === "first" ? "First visit" : r.verdict === "better" ? "Improved" : r.verdict === "same" ? "Stable" : "Worse"}</Pill> : <Pill tone="neutral">No questionnaire</Pill>}</td></tr>; })}
+        {rows.map((r) => { const t = VERDICT_TEXT[r.verdict]; return <tr key={r.id}><td><a href={`/patients/${r.id}`} className="font-bold text-cgh-blue hover:underline">{r.name}</a><div className="text-xs text-slate-500">{r.login_id_masked}{r.physio_name && scope === "all" ? ` · ${r.physio_name}` : ""}</div></td><td className="whitespace-nowrap">{r.age ?? "-"} · {(r.gender ?? "-")[0]}</td><td>{r.diagnosis.replace(/^\s*\d+\s*:\s*/, "")}<div className="text-xs text-slate-500">{r.diagnosis.match(/^\s*(\d+)\s*:/)?.[1] ?? ""}{r.diagnosis.match(/^\s*\d+\s*:/) ? " · " : ""}{r.region}</div></td><td className="whitespace-nowrap">{r.months_post_op != null ? `${r.months_post_op} months` : ""}</td><td className="whitespace-nowrap">{r.last_prom_at ? fmtD(r.last_prom_at) : <span className="text-slate-400">none</span>}<div className="text-xs text-slate-500">{r.n_proms} on record</div></td><td>{r.n_proms ? <Pill tone={t.tone}>{r.verdict === "first" ? "First visit" : r.verdict === "better" ? "Improved" : r.verdict === "same" ? "Stable" : "Worse"}</Pill> : <Pill tone="neutral">No questionnaire</Pill>}</td></tr>; })}
         {rows.length === 0 && <tr><td colSpan={6} className="py-3 text-slate-400">No patient matches. Try a keyword like knee or hip, or clear a filter.</td></tr>}
       </tbody></table></Card>}
   </div>;

@@ -4,11 +4,11 @@ import { db } from "./db";
 import { flagsFor, type Survey } from "./data";
 import { verdict, type Verdict } from "./plain";
 
-export type SearchParams = { q?: string; region?: string; min_age?: number | null; max_age?: number | null; postop_min_months?: number | null; postop_max_months?: number | null; scope: "mine" | "all"; physioId?: number | null };
+export type SearchParams = { q?: string; region?: string; diagnosis?: string; min_age?: number | null; max_age?: number | null; postop_min_months?: number | null; postop_max_months?: number | null; scope: "mine" | "all"; physioId?: number | null };
 export type SearchRow = { id: number; name: string; login_id_masked: string; age: number | null; gender: string | null; diagnosis: string; region: string; physio_name: string | null; surgery_date: string | null; months_post_op: number | null; last_prom_at: string | null; n_proms: number; verdict: Verdict };
 
 export const REGIONS = ["Knee", "Shoulder", "Lower back", "Neck", "Hip", "Ankle / foot", "Hand / wrist", "Elbow", "Other"];
-export const hasFilters = (p: Partial<SearchParams>) => !!(p.q?.trim() || p.region || p.min_age != null || p.max_age != null || p.postop_min_months != null || p.postop_max_months != null);
+export const hasFilters = (p: Partial<SearchParams>) => !!(p.q?.trim() || p.region || p.diagnosis || p.min_age != null || p.max_age != null || p.postop_min_months != null || p.postop_max_months != null);
 
 export async function searchPatients(p: SearchParams): Promise<SearchRow[]> {
   const q = await db();
@@ -21,6 +21,7 @@ export async function searchPatients(p: SearchParams): Promise<SearchRow[]> {
     where.push(`(u.login_id = ${nric} OR r.diagnosis ILIKE ${like} OR r.region ILIKE ${like} OR u.name ILIKE ${like}${code ? ` OR r.diagnosis LIKE ${code}` : ""})`);
   }
   if (p.region) where.push(`r.region = ${add(p.region)}`);
+  if (p.diagnosis) where.push(`r.diagnosis ILIKE ${add(`%${p.diagnosis}%`)}`);
   if (p.min_age != null) where.push(`u.birthday <= (now() - (${add(p.min_age)} || ' years')::interval)`);
   if (p.max_age != null) where.push(`u.birthday > (now() - (${add(p.max_age + 1)} || ' years')::interval)`);
   if (p.postop_min_months != null) where.push(`r.surgery_date IS NOT NULL AND r.surgery_date <= (now() - (${add(p.postop_min_months)} || ' months')::interval)`);
@@ -51,5 +52,14 @@ export function parseSearch(sp: Record<string, string | undefined>, scope: "mine
   const num = (v: string | undefined) => v != null && v !== "" && !isNaN(Number(v)) ? Number(v) : null;
   const postop = sp.postop ?? "";
   const [pmin, pmax] = postop === "0-3" ? [0, 3] : postop === "3-6" ? [3, 6] : postop === "6-12" ? [6, 12] : postop === "12+" ? [12, null] : [null, null];
-  return { q: sp.q ?? "", region: sp.region || undefined, min_age: num(sp.min_age), max_age: num(sp.max_age), postop_min_months: num(sp.postop_min_months) ?? num(sp.postop_min) ?? pmin, postop_max_months: num(sp.postop_max_months) ?? num(sp.postop_max) ?? pmax, scope, physioId };
+  return { q: sp.q ?? "", region: sp.region || undefined, diagnosis: sp.diagnosis || undefined, min_age: num(sp.min_age), max_age: num(sp.max_age), postop_min_months: num(sp.postop_min_months) ?? num(sp.postop_min) ?? pmin, postop_max_months: num(sp.postop_max_months) ?? num(sp.postop_max) ?? pmax, scope, physioId };
+}
+
+/** Distinct diagnoses in the data, most common first, grouped by body region, for the Diagnosis dropdown. */
+export async function diagnosisOptions(): Promise<{ region: string; items: { name: string; n: number }[] }[]> {
+  const q = await db();
+  const rows = await q<{ region: string; diagnosis: string; n: number }>("SELECT region, diagnosis, COUNT(*)::int AS n FROM referrals GROUP BY region, diagnosis ORDER BY n DESC, diagnosis");
+  const by = new Map<string, { name: string; n: number }[]>();
+  for (const r of rows) { const name = r.diagnosis.replace(/^\s*\d+\s*:\s*/, "").trim(); const a = by.get(r.region) ?? []; if (!a.some((x) => x.name === name)) a.push({ name, n: r.n }); else a.find((x) => x.name === name)!.n += r.n; by.set(r.region, a); }
+  return [...by.entries()].map(([region, items]) => ({ region, items, total: items.reduce((t, x) => t + x.n, 0) })).sort((a, b) => b.total - a.total).map(({ region, items }) => ({ region, items }));
 }
