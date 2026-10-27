@@ -45,6 +45,8 @@ try {
     ON CONFLICT (caregiver_id, patient_id) DO UPDATE SET status='accepted', responded_at=now()`, [dau, mum]);
   // today's questionnaires for the parents
   const del = await q(`DELETE FROM surveys WHERE patient_id = ANY($1) AND (submitted_at >= ${SOD} OR appointment_id IN (SELECT id FROM appointments WHERE patient_id = ANY($1) AND scheduled_at >= ${SOD} AND scheduled_at < ${SOD} + interval '1 day')) RETURNING id`, [[dad, mum]]);
+  // alerts raised by the parents' demo questionnaires (and their SMS copies) go too, so the staff inbox matches the data
+  await q(`DELETE FROM notifications WHERE kind = 'alert' AND appointment_id IN (SELECT id FROM appointments WHERE patient_id = ANY($1) AND scheduled_at >= ${SOD})`, [[dad, mum]]);
   // daughter: stop acting as anyone, drop stale allowed/declined notices
   await q("UPDATE sessions SET acting_patient_id = NULL WHERE user_id = $1", [dau]);
   await q("DELETE FROM notifications WHERE user_id = $1 AND kind IN ('link_accepted','link_declined')", [dau]);
