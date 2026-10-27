@@ -1,0 +1,30 @@
+{
+  "name": "web-push-core",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "A minimal Next.js Web Push example backed by Neon",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "generate-vapid-keys": "node scripts/generate-vapid-keys.js"
+  },
+  "engines": {
+    "node": ">=20.9.0"
+  },
+  "dependencies": {
+    "@neondatabase/serverless": "^1.2.0",
+    "next": "^16.4.3",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "web-push": "^3.6.7"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.0",
+    "@types/react": "^19.1.0",
+    "@types/react-dom": "^19.1.0",
+    "@types/web-push": "^3.6.4",
+    "typescript": "^5.9.0"
+  }
+}
