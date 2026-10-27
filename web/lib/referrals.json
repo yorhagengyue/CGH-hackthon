@@ -1,0 +1,492 @@
+[
+{
+"ext_id": "9b1972889c156d4ffcef",
+"age_band": "70-79",
+"gender": "FEMALE",
+"diagnosis": "1221191016 : Trigger finger",
+"referred": "2025-06-02"
+},
+{
+"ext_id": "5b05f63259bd015fd0d1",
+"age_band": "40-49",
+"gender": "FEMALE",
+"diagnosis": "377081010 : Chiari malformation type I",
+"referred": "2025-06-09"
+},
+{
+"ext_id": "cf668c2def813c6733df",
+"age_band": "60-69",
+"gender": "FEMALE",
+"diagnosis": "473534016 : Fracture",
+"referred": "2025-06-09"
+},
+{
+"ext_id": "2dd76b3c85d4f9a98f95",
+"age_band": "30-39",
+"gender": "FEMALE",
+"diagnosis": "416140012 : LBP - Low back pain",
+"referred": "2025-06-12"
+},
+{
+"ext_id": "199012e3dbd440f8c06e",
+"age_band": "20-29",
+"gender": "MALE",
+"diagnosis": "75568012 : Shoulder pain",
+"referred": "2025-06-12"
+},
+{
+"ext_id": "d611624a2dac79f8bbe4",
+"age_band": "20-29",
+"gender": "MALE",
+"diagnosis": "493899010 : Ankle sprain",
+"referred": "2025-06-04"
+},
+{
+"ext_id": "2c4967e08f5ff217cdab",
+"age_band": "40-49",
+"gender": "MALE",
+"diagnosis": "34511010 : Fracture of hand",
+"referred": "2025-06-10"
+},
+{
+"ext_id": "dd0bc4b0f54bdf89b324",
+"age_band": "40-49",
+"gender": "MALE",
+"diagnosis": "128728011 : Degenerative disc disease",
+"referred": "2025-06-04"
+},
+{
+"ext_id": "7f1d03dc2a2e620892e5",
+"age_band": "30-39",
+"gender": "MALE",
+"diagnosis": "2551729012 : Scaphoid head",
+"referred": "2025-06-10"
+},
+{
+"ext_id": "d2915fadb9c88ee33dd5",
+"age_band": "40-49",
+"gender": "MALE",
+"diagnosis": "311385019 : Plantar fasciitis",
+"referred": "2025-06-04"
+},
+{
+"ext_id": "6a38b354bd68d750d97b",
+"age_band": "50-59",
+"gender": "FEMALE",
+"diagnosis": "311385019 : Plantar fasciitis",
+"referred": "2025-06-06"
+},
+{
+"ext_id": "5309ddbb2cbb7252dda0",
+"age_band": "50-59",
+"gender": "FEMALE",
+"diagnosis": "400548010 : Metatarsalgia",
+"referred": "2025-06-04"
+},
+{
+"ext_id": "738a61a6d974edbe1cf7",
+"age_band": "70-79",
+"gender": "MALE",
+"diagnosis": "440006014 : Thumb joint - soft tissue swelling",
+"referred": "2025-06-09"
+},
+{
+"ext_id": "d7af468bf7cca387e0d9",
+"age_band": "60-69",
+"gender": "MALE",
+"diagnosis": "3036267014 : Recurrent dislocation of shoulder",
+"referred": "2025-06-06"
+},
+{
+"ext_id": "78a0bf66bb43cc8d1293",
+"age_band": "60-69",
+"gender": "FEMALE",
+"diagnosis": "128728011 : Degenerative disc disease",
+"referred": "2025-06-06"
+},
+{
+"ext_id": "bb5f95db4682e5dcf9af",
+"age_band": "50-59",
+"gender": "FEMALE",
+"diagnosis": "128728011 : Degenerative disc disease",
+"referred": "2025-06-05"
+},
+{
+"ext_id": "5cc3f44b61efcdc5ce84",
+"age_band": "20-29",
+"gender": "FEMALE",
+"diagnosis": "2792941016 : Injury of ligament of knee",
+"referred": "2025-06-04"
+},
+{
+"ext_id": "221d19e2a148a1d8abb8",
+"age_band": "50-59",
+"gender": "MALE",
+"diagnosis": "1484112019 : Knee pain",
+"referred": "2025-06-03"
+},
+{
+"ext_id": "98accd6bd33664e1a3c4",
+"age_band": "70-79",
+"gender": "MALE",
+"diagnosis": "7278014 : Arthritis",
+"referred": "2025-06-05"
+},
+{
+"ext_id": "c592e6a33a45cb83a825",
+"age_band": "20-29",
+"gender": "MALE",
+"diagnosis": "2646370015 : Back pain",
+"referred": "2025-06-04"
+},
+{
+"ext_id": "597f10373efeac3cce5b",
+"age_band": "20-29",
+"gender": "FEMALE",
+"diagnosis": "2427014 : Ankle instability",
+"referred": "2025-06-13"
+},
+{
+"ext_id": "410fb8f00824f15a4af9",
+"age_band": "40-49",
+"gender": "FEMALE",
+"diagnosis": "477648014 : Ankle fracture",
+"referred": "2025-06-10"
+},
+{
+"ext_id": "8e06c8879023408f90f7",
+"age_band": "50-59",
+"gender": "MALE",
+"diagnosis": "7278014 : Arthritis",
+"referred": "2025-06-02"
+},
+{
+"ext_id": "fbb9199bcdbc0ad7a06b",
+"age_band": "40-49",
+"gender": "MALE",
+"diagnosis": "2646370015 : Back pain",
+"referred": "2025-06-09"
+},
+{
+"ext_id": "eb24fa7be02d2754c759",
+"age_band": "50-59",
+"gender": "MALE",
+"diagnosis": "7278014 : Arthritis",
+"referred": "2025-06-04"
+},
+{
+"ext_id": "fbd16839e7a78906f396",
+"age_band": "50-59",
+"gender": "FEMALE",
+"diagnosis": "206420017 : Lumbar radiculopathy",
+"referred": "2025-06-05"
+},
+{
+"ext_id": "6c666669e0357485dc6e",
+"age_band": "30-39",
+"gender": "FEMALE",
+"diagnosis": "493899010 : Ankle sprain",
+"referred": "2025-06-03"
+},
+{
+"ext_id": "f2e55647e2c4c18c35c8",
+"age_band": "60-69",
+"gender": "MALE",
+"diagnosis": "135489010 : Neck pain",
+"referred": "2025-06-12"
+},
+{
+"ext_id": "bdd25003b8911a9934b8",
+"age_band": "60-69",
+"gender": "MALE",
+"diagnosis": "99949018 : Osteomyelitis",
+"referred": "2025-06-06"
+},
+{
+"ext_id": "213495c106cd0191ebe0",
+"age_band": "50-59",
+"gender": "MALE",
+"diagnosis": "2533141010 : Disorder of rotator cuff",
+"referred": "2025-06-09"
+},
+{
+"ext_id": "5bbc42f633edbe1cd86f",
+"age_band": "40-49",
+"gender": "MALE",
+"diagnosis": "502476018 : PID - Prolapsed intervertebral disc",
+"referred": "2025-06-13"
+},
+{
+"ext_id": "eed21b06b7ce52609bab",
+"age_band": "60-69",
+"gender": "FEMALE",
+"diagnosis": "75568012 : Shoulder pain",
+"referred": "2025-06-10"
+},
+{
+"ext_id": "7a2b233233d217f193a7",
+"age_band": "30-39",
+"gender": "MALE",
+"diagnosis": "51875014 : Knee pain",
+"referred": "2025-06-03"
+},
+{
+"ext_id": "eac9bbd07ccd88061e71",
+"age_band": "Above 90",
+"gender": "FEMALE",
+"diagnosis": "3047594015 : Fracture of shoulder",
+"referred": "2025-06-12"
+},
+{
+"ext_id": "86ac4270121d88ae1c7c",
+"age_band": "40-49",
+"gender": "MALE",
+"diagnosis": "2646370015 : Back pain",
+"referred": "2025-06-13"
+},
+{
+"ext_id": "ca201ebebd8820a35cde",
+"age_band": "50-59",
+"gender": "MALE",
+"diagnosis": "2533141010 : Disorder of rotator cuff",
+"referred": "2025-06-02"
+},
+{
+"ext_id": "9894650cae3a0747ae4b",
+"age_band": "20-29",
+"gender": "MALE",
+"diagnosis": "502476018 : PID - Prolapsed intervertebral disc",
+"referred": "2025-06-02"
+},
+{
+"ext_id": "6fce8b1eff0f2d0837ed",
+"age_band": "40-49",
+"gender": "FEMALE",
+"diagnosis": "198517017 : Cervical radiculopathy",
+"referred": "2025-06-02"
+},
+{
+"ext_id": "2d97dbb6ef0244956cbc",
+"age_band": "50-59",
+"gender": "FEMALE",
+"diagnosis": "359420013 : Osteoarthritis of knee",
+"referred": "2025-06-03"
+},
+{
+"ext_id": "edbf3fb632e152f9e079",
+"age_band": "40-49",
+"gender": "MALE",
+"diagnosis": "1212108017 : Back pain - finding",
+"referred": "2025-06-12"
+},
+{
+"ext_id": "d29fb2bfb8b0c8546b69",
+"age_band": "30-39",
+"gender": "FEMALE",
+"diagnosis": "1481870016 : Cervical spondylosis",
+"referred": "2025-06-05"
+},
+{
+"ext_id": "af3f45cee6a2dbb157c1",
+"age_band": "60-69",
+"gender": "MALE",
+"diagnosis": "128728011 : Degenerative disc disease",
+"referred": "2025-06-04"
+},
+{
+"ext_id": "12a22e64893706b078f9",
+"age_band": "40-49",
+"gender": "FEMALE",
+"diagnosis": "244152014 : Osteoarthritis",
+"referred": "2025-06-13"
+},
+{
+"ext_id": "873623a29da813f43aca",
+"age_band": "50-59",
+"gender": "MALE",
+"diagnosis": "120085015 : Radiculopathy",
+"referred": "2025-06-12"
+},
+{
+"ext_id": "80f523a72ce85a4a70b4",
+"age_band": "60-69",
+"gender": "MALE",
+"diagnosis": "41990019 : Headache",
+"referred": "2025-06-05"
+},
+{
+"ext_id": "e5510c4bfd3d0cdc043c",
+"age_band": "30-39",
+"gender": "FEMALE",
+"diagnosis": "38727013 : Sciatica",
+"referred": "2025-06-09"
+},
+{
+"ext_id": "b11cfdf9b28670b4e91e",
+"age_band": "60-69",
+"gender": "MALE",
+"diagnosis": "135489010 : Neck pain",
+"referred": "2025-06-09"
+},
+{
+"ext_id": "b17b0e22287fd9951198",
+"age_band": "40-49",
+"gender": "MALE",
+"diagnosis": "359545014 : Shoulder impingement syndrome",
+"referred": "2025-06-09"
+},
+{
+"ext_id": "f9e20a6bd2c5cae9fc99",
+"age_band": "40-49",
+"gender": "FEMALE",
+"diagnosis": "311725019 : Shoulder pain",
+"referred": "2025-06-13"
+},
+{
+"ext_id": "1b72fdc8f666dbbd67e2",
+"age_band": "70-79",
+"gender": "MALE",
+"diagnosis": "118977010 : Fracture of femur",
+"referred": "2025-06-11"
+},
+{
+"ext_id": "591effa618fe192bb946",
+"age_band": "30-39",
+"gender": "FEMALE",
+"diagnosis": "2646370015 : Back pain",
+"referred": "2025-06-04"
+},
+{
+"ext_id": "2f81af4592aa61e51423",
+"age_band": "60-69",
+"gender": "FEMALE",
+"diagnosis": "192285010 : Cervical spondylosis",
+"referred": "2025-06-04"
+},
+{
+"ext_id": "545a7130a04730134f56",
+"age_band": "30-39",
+"gender": "MALE",
+"diagnosis": "2646370015 : Back pain",
+"referred": "2025-06-05"
+},
+{
+"ext_id": "b81d9ab651dd351fc77d",
+"age_band": "40-49",
+"gender": "MALE",
+"diagnosis": "2646370015 : Back pain",
+"referred": "2025-06-13"
+},
+{
+"ext_id": "c7ec9ffbe9007df1af3c",
+"age_band": "80-89",
+"gender": "MALE",
+"diagnosis": "206420017 : Lumbar radiculopathy",
+"referred": "2025-06-10"
+},
+{
+"ext_id": "cd926c697170a120e540",
+"age_band": "10-19",
+"gender": "MALE",
+"diagnosis": "2554044019 : Shoulder dislocation",
+"referred": "2025-06-06"
+},
+{
+"ext_id": "f3d197623455ba4ed768",
+"age_band": "60-69",
+"gender": "MALE",
+"diagnosis": "359432012 : Lumbar spondylosis",
+"referred": "2025-06-10"
+},
+{
+"ext_id": "a5cb7fb3b0e729f25044",
+"age_band": "60-69",
+"gender": "MALE",
+"diagnosis": "128728011 : Degenerative disc disease",
+"referred": "2025-06-02"
+},
+{
+"ext_id": "ef114e082d73a74e5ce7",
+"age_band": "40-49",
+"gender": "MALE",
+"diagnosis": "75568012 : Shoulder pain",
+"referred": "2025-06-06"
+},
+{
+"ext_id": "f2014837c06f1d82ed00",
+"age_band": "60-69",
+"gender": "MALE",
+"diagnosis": "359432012 : Lumbar spondylosis",
+"referred": "2025-06-10"
+},
+{
+"ext_id": "09ba3944cdae8e3b6fa7",
+"age_band": "20-29",
+"gender": "FEMALE",
+"diagnosis": "252311015 : Backache",
+"referred": "2025-06-10"
+},
+{
+"ext_id": "fed338dcb5a994482d63",
+"age_band": "40-49",
+"gender": "FEMALE",
+"diagnosis": "2533141010 : Disorder of rotator cuff",
+"referred": "2025-06-06"
+},
+{
+"ext_id": "bb8f098ec2243c7bd9f4",
+"age_band": "10-19",
+"gender": "MALE",
+"diagnosis": "490702017 : Shoulder injury",
+"referred": "2025-06-05"
+},
+{
+"ext_id": "43645aed44ef20dfab4c",
+"age_band": "20-29",
+"gender": "MALE",
+"diagnosis": "493899010 : Ankle sprain",
+"referred": "2025-06-11"
+},
+{
+"ext_id": "86e80015e2eb4663cd3e",
+"age_band": "30-39",
+"gender": "MALE",
+"diagnosis": "311385019 : Plantar fasciitis",
+"referred": "2025-06-11"
+},
+{
+"ext_id": "19077768e32028afebe3",
+"age_band": "60-69",
+"gender": "FEMALE",
+"diagnosis": "493899010 : Ankle sprain",
+"referred": "2025-06-10"
+},
+{
+"ext_id": "aebf93c52fc3ed2c2c9b",
+"age_band": "20-29",
+"gender": "MALE",
+"diagnosis": "75568012 : Shoulder pain",
+"referred": "2025-06-09"
+},
+{
+"ext_id": "04ad4e915e63c19b8e8a",
+"age_band": "20-29",
+"gender": "FEMALE",
+"diagnosis": "502476018 : PID - Prolapsed intervertebral disc",
+"referred": "2025-06-05"
+},
+{
+"ext_id": "bcdb4d79337c83c3175e",
+"age_band": "40-49",
+"gender": "FEMALE",
+"diagnosis": "1481870016 : Cervical spondylosis",
+"referred": "2025-06-12"
+},
+{
+"ext_id": "2f08bd7b1a19be743aef",
+"age_band": "60-69",
+"gender": "FEMALE",
+"diagnosis": "311091014 : Cervical spondylosis with radiculopathy",
+"referred": "2025-06-10"
+}
+]
