@@ -4,14 +4,14 @@ import { DIMS, DIM_LABEL, LEVEL_LABEL, VALUE_SET, flag, type Dim } from "./eq5d"
 
 export type Survey = { id: number; appointment_id: number | null; mo: number; sc: number; ua: number; pd: number; ad: number; eq_vas: number; pain: number; index_value: number; submitted_at: string; filled_by_name: string };
 export type Appt = { id: number; referral_id: number; scheduled_at: string; kind: string; status: string; physio_name: string | null; survey_id: number | null };
-export type Referral = { id: number; diagnosis: string; region: string; notes: string | null; status: string; created_at: string; doctor_name: string; physio_id: number | null; physio_name: string | null };
+export type Referral = { id: number; diagnosis: string; region: string; notes: string | null; status: string; created_at: string; doctor_name: string; physio_id: number | null; physio_name: string | null; surgery_date: string | null };
 
 export async function patientBundle(patientId: number) {
   const q = await db();
   const patient = await one<{ id: number; login_id: string; name: string; phone: string | null; gender: string | null; birthday: string | null; address: string | null }>(
     "SELECT id, login_id, name, phone, gender, birthday::text AS birthday, address FROM users WHERE id = $1 AND role='patient'", [patientId]);
   if (!patient) return null;
-  const referrals = await q<Referral>(`SELECT r.id, r.diagnosis, r.region, r.notes, r.status, r.created_at::text, d.name AS doctor_name, r.physio_id, p.name AS physio_name
+  const referrals = await q<Referral>(`SELECT r.id, r.diagnosis, r.region, r.notes, r.status, r.created_at::text, d.name AS doctor_name, r.physio_id, p.name AS physio_name, r.surgery_date::text AS surgery_date
     FROM referrals r JOIN users d ON d.id = r.doctor_id LEFT JOIN users p ON p.id = r.physio_id WHERE r.patient_id = $1 ORDER BY r.created_at DESC`, [patientId]);
   const appointments = await q<Appt>(`SELECT a.id, a.referral_id, a.scheduled_at::text, a.kind, a.status, p.name AS physio_name, s.id AS survey_id
     FROM appointments a LEFT JOIN users p ON p.id = a.physio_id LEFT JOIN surveys s ON s.appointment_id = a.id WHERE a.patient_id = $1 ORDER BY a.scheduled_at`, [patientId]);
