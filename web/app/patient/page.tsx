@@ -1,9 +1,9 @@
 import { redirect } from "next/navigation";
 import { session } from "@/lib/auth";
 import { db, one } from "@/lib/db";
-import { patientBundle } from "@/lib/data";
+import { patientBundle, flagsFor } from "@/lib/data";
 import { PatientDetail } from "@/components/PatientDetail";
-import { Card, Pill, fmtDT, fmtD, age, startOfTodaySG } from "@/components/ui";
+import { Card, Pill, Stat, TrendChart, fmtDT, fmtD, age, startOfTodaySG } from "@/components/ui";
 import { Nav } from "@/components/Nav";
 import { Suspense } from "react";
 import { markReadAction } from "../actions";
@@ -20,6 +20,8 @@ export default async function PatientPage({ searchParams }: { searchParams: Prom
   const unread = notes.filter((n) => n.channel === "app" && !n.read_at).length;
   const next = b.appointments.find((a) => a.status === "scheduled" && new Date(a.scheduled_at) >= startOfTodaySG());
   const pending = b.appointments.filter((a) => a.status === "scheduled" && !a.survey_id && new Date(a.scheduled_at) >= startOfTodaySG());
+  const cur = b.surveys.at(-1) ?? null, prev = b.surveys.at(-2) ?? null, fl = flagsFor(cur, prev);
+  const dLabel = (iso: string) => new Date(iso).toLocaleDateString("en-SG", { day: "numeric", month: "short", timeZone: "Asia/Singapore" });
   const tabs: [string, string][] = [["home", "Overview"], ["survey", "Survey"], ["progress", "Progress"], ["calendar", "Calendar"], ["notifications", `Notifications${unread ? ` (${unread})` : ""}`], ["profile", "Profile"]];
   return <div>
     {s.user.role === "caregiver" && <div className="mb-3 bg-warn-bg rounded-lg px-3 py-2 text-sm">You are viewing <b>{b.patient.name}</b>'s page as their caregiver. <a href="/caregiver" className="underline">Switch parent</a></div>}
@@ -28,9 +30,19 @@ export default async function PatientPage({ searchParams }: { searchParams: Prom
     {done && <div className="mb-3 bg-ok-bg rounded-lg px-3 py-2 text-sm">Thank you, your questionnaire has been sent to your physiotherapist.</div>}
     {tab === "home" && <div className="grid md:grid-cols-2 gap-4">
       <Card title="Next appointment">{next ? <><div className="text-xl font-bold">{fmtDT(next.scheduled_at)}</div><div className="text-slate-600 text-sm">{next.kind} visit · {next.physio_name ?? "physiotherapist TBC"}</div><div className="mt-3">{next.survey_id ? <Pill ok>Questionnaire received</Pill> : <a href={`/survey?appt=${next.id}`} className="inline-block px-4 py-2 rounded-lg bg-cgh-blue text-white text-sm font-semibold">Fill in questionnaire now (2 min)</a>}</div></> : <p className="text-slate-500 text-sm">No upcoming appointment.</p>}</Card>
-      <Card title="To do">{pending.length ? pending.map((a) => <div key={a.id} className="flex items-center justify-between text-sm py-1.5 border-b border-slate-100 last:border-0"><span>Questionnaire for {fmtD(a.scheduled_at)}</span><a href={`/survey?appt=${a.id}`} className="px-3 py-1 rounded bg-cgh-blue text-white text-xs">Fill</a></div>) : <p className="text-slate-500 text-sm">Nothing to do right now.</p>}</Card>
+      <Card title="To do">{pending.length ? pending.map((a) => <div key={a.id} className="flex items-center justify-between text-sm py-1.5 border-b border-slate-100 last:border-0"><span>Questionnaire for the visit on {fmtD(a.scheduled_at)}</span><a href={`/survey?appt=${a.id}`} className="px-4 py-2 rounded-lg bg-cgh-blue text-white text-sm font-bold hover:bg-cgh-blue-dark">Fill in now</a></div>) : <p className="text-slate-500 text-sm">Nothing to do right now.</p>}</Card>
       <Card title="My condition">{b.referrals[0] ? <><div className="font-semibold">{b.referrals[0].diagnosis}</div><div className="text-sm text-slate-600">{b.referrals[0].region} · referred by {b.referrals[0].doctor_name} on {fmtD(b.referrals[0].created_at)}</div><div className="text-sm text-slate-600">Physiotherapist: {b.referrals[0].physio_name ?? "to be assigned"}</div></> : <p className="text-slate-500 text-sm">No referral yet.</p>}</Card>
       <Card title="Recent notifications">{notes.slice(0, 4).map((n) => <div key={n.id} className="text-sm py-1.5 border-b border-slate-100 last:border-0"><span className="text-xs text-slate-400 mr-2">{fmtD(n.send_at)}</span>{n.message}</div>)}{notes.length === 0 && <p className="text-slate-500 text-sm">None.</p>}</Card>
+      <Card title="My progress" right={<a href="/patient?tab=progress" className="text-cgh-blue font-semibold">See all</a>} className="md:col-span-2">
+        {cur ? <div className="grid md:grid-cols-[1fr_1.2fr] gap-5 items-center">
+          <div className="grid grid-cols-3 gap-3">
+            <Stat value={cur.pain} unit="/10" label={<>Pain {prev && `(was ${prev.pain})`}</>} arrow={fl.pain} />
+            <Stat value={cur.index_value.toFixed(3)} label={<>EQ-5D index {prev && `(was ${prev.index_value.toFixed(3)})`}</>} arrow={fl.index} />
+            <Stat value={cur.eq_vas} label={<>EQ-VAS {prev && `(was ${prev.eq_vas})`}</>} arrow={fl.vas} />
+          </div>
+          <TrendChart points={b.surveys.map((x) => ({ x: dLabel(x.submitted_at), y: x.index_value }))} max={1} min={0} label="EQ-5D-5L index over visits" fmt={(v) => v.toFixed(2)} />
+        </div> : <p className="text-sm text-slate-500">Your progress charts will appear here after your first questionnaire.</p>}
+      </Card>
     </div>}
     {tab === "survey" && <Card title="Questionnaire (EQ-5D-5L)">{pending.length ? <div className="space-y-2">{pending.map((a) => <div key={a.id} className="flex items-center justify-between text-sm"><span>For your appointment on <b>{fmtDT(a.scheduled_at)}</b></span><a href={`/survey?appt=${a.id}`} className="px-3 py-1.5 rounded bg-cgh-blue text-white text-xs font-semibold">Start</a></div>)}</div> : <div className="text-sm text-slate-600">No questionnaire due right now. You can still record how you feel today: <a href="/survey" className="underline text-cgh-blue">fill an extra entry</a>.</div>}</Card>}
     {tab === "progress" && <PatientDetail patientId={patientId} self />}

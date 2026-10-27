@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { session } from "@/lib/auth";
 import { HOME } from "@/lib/roles";
 import { DEMO_PASSWORD } from "@/lib/seed";
+import { Arrow } from "@/components/ui";
 
 const DIMS = [["Mobility", 2], ["Self-care", 1], ["Usual activities", 2], ["Pain / discomfort", 3], ["Anxiety / depression", 1]] as const;
 const LV = ["", "lv1", "lv2", "lv3", "lv4", "lv5"];
@@ -26,7 +27,7 @@ export default async function Home() {
         <div className="absolute -inset-6 bg-gradient-to-br from-cgh-mist to-transparent rounded-[32px] -z-10" />
         <div className="bg-white rounded-2xl shadow-card p-5">
           <div className="flex items-center justify-between"><div><div className="text-[11px] font-bold uppercase tracking-wide text-slate-500">Clinic list · today</div><div className="font-bold text-cgh-ink">Tan Wei Ming · Knee · follow-up, 2:00 pm</div></div><span className="px-2 py-0.5 rounded-full text-xs font-bold bg-ok-bg text-ok">Submitted last night</span></div>
-          <div className="grid grid-cols-3 gap-3 mt-4">{[["3", "/10", "Pain", "▼ from 5"], ["0.829", "", "EQ-5D index", "▲ from 0.70"], ["72", "", "EQ-VAS", "▲ from 60"]].map(([v, u, l, d]) => <div key={l} className="rounded-xl bg-cgh-mist/60 px-3 py-2.5"><div className="text-xl font-extrabold tabular-nums">{v}<span className="text-xs text-slate-400 font-semibold">{u}</span></div><div className="text-[11px] text-slate-500">{l}</div><div className="text-[11px] font-bold text-ok mt-0.5">{d}</div></div>)}</div>
+          <div className="grid grid-cols-3 gap-3 mt-4">{[["3", "/10", "Pain", "from 5"], ["0.829", "", "EQ-5D index", "from 0.70"], ["72", "", "EQ-VAS", "from 60"]].map(([v, u, l, d]) => <div key={l} className="rounded-xl bg-cgh-mist/60 px-3 py-2.5"><div className="text-xl font-extrabold tabular-nums">{v}<span className="text-xs text-slate-400 font-semibold">{u}</span></div><div className="text-[11px] text-slate-500">{l}</div><div className="text-[11px] font-bold text-ok mt-0.5"><Arrow f="improved" /> {d}</div></div>)}</div>
           <div className="mt-4 space-y-1.5">{DIMS.map(([d, l]) => <div key={d} className="flex items-center gap-3 text-sm"><span className="w-40 text-slate-600">{d}</span><span className="flex gap-1">{[1, 2, 3, 4, 5].map((n) => <span key={n} className={`w-7 h-6 rounded text-xs font-bold leading-6 text-center ${n === l ? LV[n] : "bg-slate-100 text-slate-300"}`}>{n}</span>)}</span></div>)}</div>
           <div className="mt-4 flex items-center gap-2"><span className="px-3 py-1.5 rounded-lg bg-cgh-blue text-white text-xs font-bold">Copy note for clinical document</span><span className="text-xs text-slate-400">EQ-5D-5L profile 21231 · England 2018 value set</span></div>
         </div>

@@ -25,7 +25,7 @@ export async function PatientDetail({ patientId, staff = false, self = false }: 
             <Stat value={cur.index_value.toFixed(3)} label={<>EQ-5D index {prev && `(was ${prev.index_value.toFixed(3)})`}</>} arrow={fl.index} />
             <Stat value={cur.eq_vas} label={<>EQ-VAS {prev && `(was ${prev.eq_vas})`}</>} arrow={fl.vas} />
           </div>
-          <table className="tbl mb-2"><thead><tr><th>Dimension</th><th>Latest <ProfileBadge s={levels(cur)} /> {fmtD(cur.submitted_at)}</th><th>Previous {prev && profileStr(prev)}</th></tr></thead><tbody>
+          <table className="tbl mb-2"><thead><tr><th>Dimension</th><th>Latest · {fmtD(cur.submitted_at)}</th><th>{prev ? <>Previous · {fmtD(prev.submitted_at)}</> : "Previous"}</th></tr></thead><tbody>
             {DIMS.map((d) => <tr key={d} ><td>{DIM_LABEL[d]}</td><td><span className={`inline-block w-6 text-center rounded font-bold ${LV_BG[cur[d]]}`}>{cur[d]}</span> <span className="text-slate-500">{LEVEL_LABEL[cur[d]]}</span></td><td>{prev ? <span className={`inline-block w-6 text-center rounded font-bold ${LV_BG[prev[d]]}`}>{prev[d]}</span> : "—"}</td></tr>)}
           </tbody></table>
         </> : <p className="text-slate-500 text-sm">No questionnaire submitted yet.</p>}

@@ -7,6 +7,7 @@ import Image from "next/image";
 import { session } from "@/lib/auth";
 import { logoutAction } from "./actions";
 import { Nav } from "@/components/Nav";
+import { MobileNav } from "@/components/MobileNav";
 
 const manrope = Manrope({ subsets: ["latin"], variable: "--font-manrope", weight: ["400", "500", "600", "700", "800"] });
 
@@ -27,7 +28,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       <Link href="/" className="flex items-center gap-3"><Image src="/brand/cgh-logo.png" alt="Changi General Hospital · SingHealth" width={114} height={36} priority /><span className="h-7 w-px bg-slate-200 hidden sm:block" /><span className="font-bold text-cgh-ink tracking-tight hidden sm:inline whitespace-nowrap">Physio PROMs</span></Link>
       {s && <div className="ml-2 hidden md:block"><Suspense><Nav items={NAV[s.user.role]} /></Suspense></div>}
       <div className="ml-auto flex items-center gap-3 text-sm">{s ? <><span className="text-slate-700 font-semibold hidden sm:inline">{s.user.name}</span><span className="text-[11px] uppercase tracking-wide bg-cgh-mist text-cgh-blue font-bold rounded-md px-2 py-1 whitespace-nowrap">{ROLE_LABEL[s.user.role]}</span><form action={logoutAction}><button className="text-slate-500 hover:text-cgh-blue font-medium">Log out</button></form></> : <><Link href="/login" className="font-semibold text-slate-700 hover:text-cgh-blue">Log in</Link><Link href="/register" className="px-4 py-2 rounded-lg bg-cgh-blue text-white font-semibold hover:bg-cgh-blue-dark">Register</Link></>}</div>
-    </div>{s && <div className="md:hidden border-t border-slate-100 px-2 py-1.5 overflow-x-auto"><Suspense><Nav items={NAV[s.user.role]} /></Suspense></div>}</header>
+    </div>{s && <Suspense><MobileNav items={NAV[s.user.role]} /></Suspense>}</header>
     <main className="max-w-7xl w-full mx-auto px-4 py-6 flex-1">{children}</main>
     <footer className="border-t border-slate-200 bg-white"><div className="max-w-7xl mx-auto px-4 py-4 flex flex-wrap items-center gap-3 text-xs text-slate-500"><Image src="/brand/cgh-logo.png" alt="" width={76} height={24} /><span className="italic">Patients. At the heart of all we do.</span><span className="ml-auto">H.A.T. Incubator 2026 · Team 1B · proof of concept, not for clinical use</span></div></footer>
   </body></html>;

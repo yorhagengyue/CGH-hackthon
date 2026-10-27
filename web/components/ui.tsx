@@ -7,7 +7,10 @@ export function ProfileBadge({ s }: { s: Record<Dim, number> | null | undefined 
   return <span className="inline-flex gap-0.5 font-mono text-[13px]">{DIMS.map((d) => <span key={d} title={`${DIM_LABEL[d]}: ${LEVEL_LABEL[s[d]]}`} className={`w-5 h-5 leading-5 text-center rounded font-bold ${LV_BG[s[d]]}`}>{s[d]}</span>)}</span>;
 }
 
-export const Arrow = ({ f }: { f: string }) => f === "improved" ? <span className="text-ok text-xs font-bold" title="Improved by at least the MCID">▲</span> : f === "worsened" ? <span className="text-danger text-xs font-bold" title="Worsened by at least the MCID">▼</span> : f === "stable" ? <span className="text-slate-300 text-xs" title="No clinically important change">•</span> : null;
+const ICON = { improved: "M4 12 L12 4 M6 4 H12 V10", worsened: "M4 4 L12 12 M12 6 V12 H6" };
+export const Arrow = ({ f }: { f: string }) => f === "improved" || f === "worsened"
+  ? <svg width="12" height="12" viewBox="0 0 16 16" className={`inline-block align-[-1px] ${f === "improved" ? "text-ok" : "text-danger"}`} aria-label={f === "improved" ? "Improved by at least the MCID" : "Worsened by at least the MCID"}><path d={ICON[f]} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+  : f === "stable" ? <svg width="12" height="12" viewBox="0 0 16 16" className="inline-block align-[-1px] text-slate-300" aria-label="No clinically important change"><path d="M3 8 H13" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg> : null;
 
 export function Card({ title, right, children, className = "", tight = false }: { title?: string; right?: React.ReactNode; children: React.ReactNode; className?: string; tight?: boolean }) {
   return <section className={`bg-white rounded-2xl shadow-card ${className}`}>{title && <h2 className="px-5 pt-4 pb-2 text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500 flex items-center gap-2">{title}<span className="ml-auto font-medium normal-case tracking-normal text-slate-400 text-xs">{right}</span></h2>}<div className={tight ? "px-1 pb-2" : "px-5 pb-5 pt-1"}>{children}</div></section>;

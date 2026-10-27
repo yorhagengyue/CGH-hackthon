@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { session } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { clinicList, levels } from "@/lib/data";
+import { clinicList, levels, profileStr } from "@/lib/data";
 import { Arrow, Card, Pill, ProfileBadge, age, fmtD, fmtDT, fmtT } from "@/components/ui";
 
 export default async function Physio({ searchParams }: { searchParams: Promise<{ day?: string }> }) {
@@ -26,10 +26,10 @@ export default async function Physio({ searchParams }: { searchParams: Promise<{
           <td>{age(r.birthday) ?? "-"} · {(r.gender ?? "-")[0]}</td><td>{r.region}<div className="text-xs text-slate-500 max-w-[220px] truncate">{r.diagnosis}</div></td>
           <td className="num">{r.cur ? <><b>{r.cur.pain}</b><span className="text-slate-400">/10</span> <Arrow f={r.flags.pain} /></> : <span className="text-slate-300">—</span>}</td><td>{r.cur ? <ProfileBadge s={levels(r.cur)} /> : <span className="text-slate-300">—</span>}</td>
           <td className="num">{r.cur ? <><b>{r.cur.index_value.toFixed(3)}</b> <Arrow f={r.flags.index} /></> : <span className="text-slate-300">—</span>}</td><td className="num">{r.cur ? <><b>{r.cur.eq_vas}</b> <Arrow f={r.flags.vas} /></> : <span className="text-slate-300">—</span>}</td>
-          <td>{r.prev ? <><ProfileBadge s={levels(r.prev)} /> {r.prev.index_value.toFixed(2)} · {r.prev.eq_vas} · {r.prev.pain}/10<div className="text-xs text-slate-500">{fmtD(r.prev.submitted_at)}</div></> : <span className="text-slate-400">first visit</span>}</td></tr>)}
+          <td className="min-w-[150px]">{r.prev ? <><span className="font-mono font-bold text-slate-700">{profileStr(r.prev)}</span> <span className="text-xs text-slate-400">{fmtD(r.prev.submitted_at)}</span><div className="text-xs text-slate-500 tabular-nums mt-0.5">index {r.prev.index_value.toFixed(2)} · VAS {r.prev.eq_vas} · pain {r.prev.pain}/10</div></> : <span className="text-slate-400">first visit</span>}</td></tr>)}
         {list.length === 0 && <tr><td colSpan={10} className="py-3 text-slate-400">No appointments on this day.</td></tr>}
       </tbody></table>
-      <div className="text-xs text-slate-500 mt-2 px-4 pb-2">▲▼ change ≥ MCID versus previous questionnaire · click a name for full history and the clinical-document note</div>
+      <div className="text-xs text-slate-500 mt-2 px-4 pb-2"><Arrow f="improved" /> <Arrow f="worsened" /> change of at least the MCID versus the previous questionnaire · click a name for full history and the clinical-document note</div>
     </Card>
     <div className="grid lg:grid-cols-[1fr_320px] gap-4">
       <Card title="My patients" right={`${mine.length} active referrals`}>
