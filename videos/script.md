@@ -13,7 +13,7 @@ shots stay long enough to read. Intro: CGH logo, 2 s. Outro: three numbers, the 
 | 02 | Daughter registers and links her father | web | 14 | A daughter registers | Mei Ling registers with her NRIC and asks to help her father with his questionnaires. |
 | 03 | Father taps Allow | iPhone | 10 | Father says yes | On his phone, Mr Tan sees who is asking and taps Allow. |
 | 04 | SMS reminder | phone photo | 8 | A reminder by SMS | The day before the visit, and two hours before, an SMS reminds him if the questionnaire is still open. |
-| 05 | Six-question survey | iPhone | 20 | Six questions, two minutes | Five EQ-5D-5L questions in his own words, then pain from 0 to 10. Two minutes. |
+| 05 | Seven-question survey | iPhone | 20 | Seven questions, two minutes | Five EQ-5D-5L questions in his own words, pain from 0 to 10, and how he feels today. |
 | 06 | Progress | iPhone | 16 | How am I doing? | A plain verdict, one chart with the numbers on it, and every past answer one swipe away. |
 | 07 | Ask | iPhone | 16 | Ask | Questions about his own visits and answers, answered from his record on the server. |
 | 08 | Clinic list | iPhone | 14 | The clinic list | Before the first patient arrives: who has answered, who has improved, and who needs attention. |

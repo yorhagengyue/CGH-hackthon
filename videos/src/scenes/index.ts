@@ -16,7 +16,7 @@ export const scenes: Scene[] = [
   { id: "02-register",   title: "A daughter registers",        icon: "user",        seconds: 14, caption: "Mei Ling registers with her NRIC and asks to help her father with his questionnaires.", media: { kind: "video", src: "media/web/02-register.mp4", frame: "browser" } },
   { id: "03-allow",      title: "Father says yes",             icon: "family",      seconds: 10, caption: "On his phone, Mr Tan sees who is asking and taps Allow.", media: { kind: "video", src: "media/ios/03-allow.mp4", frame: "phone" } },
   { id: "04-sms",        title: "A reminder by SMS",           icon: "sms",         seconds: 8,  caption: "The day before the visit, and two hours before, an SMS reminds him if the questionnaire is still open.", media: { kind: "image", src: "media/phone/04-sms.png", frame: "phone" } },
-  { id: "05-survey",     title: "Six questions, two minutes", icon: "clipboard",  seconds: 20, caption: "Five EQ-5D-5L questions in his own words, then pain from 0 to 10. Two minutes.", media: { kind: "video", src: "media/ios/05-survey.mp4", frame: "phone" } },
+  { id: "05-survey",     title: "Seven questions, two minutes", icon: "clipboard",  seconds: 20, caption: "Five EQ-5D-5L questions in his own words, pain from 0 to 10, and how he feels today.", media: { kind: "video", src: "media/ios/05-survey.mp4", frame: "phone" } },
   { id: "06-progress",   title: "How am I doing?",             icon: "chart",       seconds: 16, caption: "A plain verdict, one chart with the numbers on it, and every past answer one swipe away.", media: { kind: "video", src: "media/ios/06-progress.mp4", frame: "phone" } },
   { id: "07-ask",        title: "Ask",                         icon: "chat",        seconds: 16, caption: "Questions about his own visits and answers, answered from his record on the server.", media: { kind: "video", src: "media/ios/07-ask.mp4", frame: "phone" } },
   { id: "08-clinic",     title: "The clinic list",             icon: "stethoscope", seconds: 14, caption: "Before the first patient arrives: who has answered, who has improved, and who needs attention.", media: { kind: "video", src: "media/ios/08-clinic.mp4", frame: "phone" } },
@@ -29,7 +29,7 @@ export const scenes: Scene[] = [
 
 // The 20-second sample for the style review, cut from existing screenshots.
 export const sample: Scene[] = [
-  { id: "s1", title: "Six questions, two minutes", icon: "clipboard", seconds: 7, caption: "Five EQ-5D-5L questions in his own words, then pain from 0 to 10. Two minutes.", media: { kind: "image", src: "screens/03-survey-q1-light.png", frame: "phone" } },
+  { id: "s1", title: "Seven questions, two minutes", icon: "clipboard", seconds: 7, caption: "Five EQ-5D-5L questions in his own words, pain from 0 to 10, and how he feels today.", media: { kind: "image", src: "screens/03-survey-q1-light.png", frame: "phone" } },
   { id: "s2", title: "How am I doing?", icon: "chart", seconds: 7, caption: "A plain verdict, one chart with the numbers on it, and every past answer one swipe away.", media: { kind: "image", src: "screens/v3-01-progress-trend.png", frame: "phone" } },
   { id: "s3", title: "The clinic list", icon: "stethoscope", seconds: 6, caption: "Who has answered, who has improved, and who needs attention.", media: { kind: "image", src: "screens/v6-03-clinic-needs-attention.png", frame: "phone" } },
 ];
