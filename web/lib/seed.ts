@@ -79,7 +79,7 @@ export async function seedIfEmpty(q: Q) {
         [ref, p.id, physio, day(upcoming, hour), nPast === 0 ? "initial" : "follow-up"]))[0].id as number;
       await scheduleReminders(q, appt, p.id, day(upcoming, hour));
       // some of today's patients have already submitted (so the physio list shows both states)
-      if (upcoming === 0 && k % 3 !== 0) {
+      if (upcoming === 0 && k % 3 !== 0 && k !== 1) {  // demo family (k=0,1) stays pending so the live demo can fill them
         sev = Math.min(0.9, sev + 0.18);
         const lv: Record<Dim, number> = { mo: 1 + Math.round(sev * 3), sc: 1 + Math.round(sev * 2), ua: 1 + Math.round(sev * 3), pd: 1 + Math.round(sev * 4), ad: 1 + Math.round(sev * 2) };
         await q(`INSERT INTO surveys(appointment_id, patient_id, filled_by, mo, sc, ua, pd, ad, eq_vas, pain, index_value, submitted_at) VALUES ($1,$2,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`,
