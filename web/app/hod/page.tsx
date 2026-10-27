@@ -2,12 +2,21 @@ import { redirect } from "next/navigation";
 import { session } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { clinicList, levels } from "@/lib/data";
-import { Arrow, Card, Pill, ProfileBadge, fmtD, fmtDT } from "@/components/ui";
+import { Arrow, Card, Pill, ProfileBadge, fmtD } from "@/components/ui";
+import { hasFilters, parseSearch } from "@/lib/search";
 import { PatientSearch } from "@/components/PatientSearch";
 
 export default async function Hod({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
   const s = await session(); if (!s || s.user.role !== "hod") redirect("/login");
   const sp = await searchParams; const search = "";
+  const filters = parseSearch(sp, "all");
+  const active = hasFilters(filters);
+  const exportQuery = new URLSearchParams();
+  const labels: string[] = [];
+  for (const [key, label] of [["q", "Search"], ["region", "Body region"], ["diagnosis", "Diagnosis"], ["min_age", "Minimum age"], ["max_age", "Maximum age"], ["postop_min_months", "Post-op months ≥"], ["postop_max_months", "Post-op months <"]] as const) {
+    const value = filters[key];
+    if (value != null && value !== "") { exportQuery.set(key, String(value)); labels.push(`${label}: ${value}`); }
+  }
   const q = await db();
   const kpi = (await q<{ patients: number; surveys: number; today: number; today_done: number; physios: number }>(`SELECT (SELECT COUNT(*)::int FROM users WHERE role='patient') AS patients, (SELECT COUNT(*)::int FROM surveys) AS surveys,
     (SELECT COUNT(*)::int FROM appointments WHERE scheduled_at::date = (now() AT TIME ZONE 'Asia/Singapore')::date AND status='scheduled') AS today,
@@ -25,8 +34,16 @@ export default async function Hod({ searchParams }: { searchParams: Promise<Reco
      WHERE u.role='patient' AND ($1 = '' OR u.name ILIKE '%' || $1 || '%' OR r.diagnosis ILIKE '%' || $1 || '%' OR p.name ILIKE '%' || $1 || '%') ORDER BY u.name`, [search]);
   return <div className="space-y-4">
     <PatientSearch sp={sp} scope="all" action="/hod" />
+    <Card title="Department data export">
+      <p className="text-sm mb-3">{active ? `Active filters — ${labels.join(" · ")}. Export includes every matching patient.` : "No active filters — export includes all patients, including those without referrals."}</p>
+      <div className="flex flex-wrap gap-4 text-cgh-blue font-bold">
+        <a href="/api/hod/export">Download all patients (CSV)</a>
+        {active && <a href={`/api/hod/export?${exportQuery}`}>Download matching patients (CSV)</a>}
+      </div>
+      <p className="text-sm text-slate-500 mt-3">Separate patient, referral, appointment and survey rows linked by IDs; includes full clinical history for the selected patients. Dates and times use UTC. NRICs are masked. Contains personal and health data; store and share only through approved department channels.</p>
+    </Card>
     <div className="grid md:grid-cols-3 gap-4">{[[`${kpi.today_done} of ${kpi.today}`, "patients today have already answered their questionnaire"], [kpi.patients, "patients under physiotherapy, with " + kpi.surveys + " questionnaires on record"], [kpi.physios, "physiotherapists in the department"]].map(([n, l]) => <div key={String(l)} className="bg-white rounded-2xl shadow-card px-6 py-5"><div className="text-[36px] font-extrabold tabular-nums leading-none text-cgh-ink">{n}</div><div className="text-base text-slate-700 mt-2">{l}</div></div>)}</div>
-    <details><summary className="cursor-pointer text-cgh-blue font-bold">Outcomes, workload and today's clinic</summary>
+    <details><summary className="cursor-pointer text-cgh-blue font-bold">Outcomes, workload and today&apos;s clinic</summary>
     <div className="grid lg:grid-cols-2 gap-4 mt-3">
       <Card title="Outcomes by body region" right="first → latest PROM, patients with ≥2"><table className="tbl"><thead><tr><th>Region</th><th>Patients</th><th>Δ index</th><th>Δ EQ-VAS</th><th>Δ pain</th></tr></thead><tbody>{cohort.map((c) => <tr key={c.region} ><td className="py-1.5 font-semibold">{c.region}</td><td>{c.n}</td><td className={c.d_index > 0 ? "text-ok" : "text-danger"}>{c.d_index > 0 ? "+" : ""}{c.d_index}</td><td className={c.d_vas > 0 ? "text-ok" : "text-danger"}>{c.d_vas > 0 ? "+" : ""}{c.d_vas}</td><td className={c.d_pain < 0 ? "text-ok" : "text-danger"}>{c.d_pain > 0 ? "+" : ""}{c.d_pain}</td></tr>)}</tbody></table></Card>
       <Card title="By physiotherapist"><table className="tbl"><thead><tr><th>Physiotherapist</th><th>Active patients</th><th>PROM records</th></tr></thead><tbody>{byPhysio.map((p) => <tr key={p.name} ><td>{p.name}</td><td>{p.patients}</td><td>{p.surveys}</td></tr>)}</tbody></table>

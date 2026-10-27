@@ -10,10 +10,11 @@ export type SearchRow = { id: number; name: string; login_id_masked: string; age
 export const REGIONS = ["Knee", "Shoulder", "Lower back", "Neck", "Hip", "Ankle / foot", "Hand / wrist", "Elbow", "Other"];
 export const hasFilters = (p: Partial<SearchParams>) => !!(p.q?.trim() || p.region || p.diagnosis || p.min_age != null || p.max_age != null || p.postop_min_months != null || p.postop_max_months != null);
 
-export async function searchPatients(p: SearchParams): Promise<SearchRow[]> {
-  const q = await db();
-  const where: string[] = ["u.role = 'patient'", "r.id IS NOT NULL"]; const args: unknown[] = [];
+/** Shared predicates; r is the latest referral. Export may include un-referred patients when unfiltered. */
+export function patientSearchWhere(p: SearchParams, requireReferral = true) {
+  const where: string[] = ["u.role = 'patient'"]; const args: unknown[] = [];
   const add = (v: unknown) => { args.push(v); return `$${args.length}`; };
+  if (requireReferral) where.push("r.id IS NOT NULL");
   const term = (p.q ?? "").trim();
   if (term) {
     const nric = add(term.toUpperCase().replace(/\s+/g, "")), like = add(`%${term}%`);
@@ -28,6 +29,12 @@ export async function searchPatients(p: SearchParams): Promise<SearchRow[]> {
   if (p.postop_min_months != null) where.push(`r.surgery_date IS NOT NULL AND r.surgery_date <= (now() - (${add(p.postop_min_months)} || ' months')::interval)`);
   if (p.postop_max_months != null) where.push(`r.surgery_date IS NOT NULL AND r.surgery_date > (now() - (${add(p.postop_max_months)} || ' months')::interval)`);
   if (p.scope === "mine") where.push(`r.physio_id = ${add(p.physioId ?? -1)}`);
+  return { where, args };
+}
+
+export async function searchPatients(p: SearchParams): Promise<SearchRow[]> {
+  const q = await db();
+  const { where, args } = patientSearchWhere(p);
   const rows = await q<{ id: number; name: string; login_id: string; birthday: string | null; gender: string | null; diagnosis: string; region: string; physio_name: string | null; surgery_date: string | null; last_prom_at: string | null; n_proms: number }>(
     `SELECT u.id, u.name, u.login_id, u.birthday::text AS birthday, u.gender, r.diagnosis, r.region, ph.name AS physio_name, r.surgery_date::text AS surgery_date,
             (SELECT MAX(s.submitted_at)::text FROM surveys s WHERE s.patient_id = u.id) AS last_prom_at, (SELECT COUNT(*)::int FROM surveys s WHERE s.patient_id = u.id) AS n_proms

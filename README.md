@@ -24,7 +24,7 @@ no manual transcription, and the data is there for longitudinal tracking and res
   post-op. Physiotherapists see their own patients, doctors and the HOD see everybody. Click a patient → the trend
   first, then the EQ-5D-5L profile, scores with explanations, and **Copy note for clinical document** (Citrix).
 - **Doctor referral** in one step: diagnosis, body region, assigned therapist, first appointment.
-- **HOD view**: how many of today's patients have answered, outcomes by body region, workload by therapist.
+- **HOD/admin view**: how many of today's patients have answered, outcomes by body region, workload by therapist, and department-wide patient browsing. The HOD can download all patient, referral, appointment and questionnaire records as CSV, or export the patients matching the shared search filters.
 
 ## Demo accounts (password `demo1234`)
 
