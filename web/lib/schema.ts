@@ -49,7 +49,7 @@ CREATE TABLE IF NOT EXISTS surveys (                -- one EQ-5D-5L submission
   patient_id INT NOT NULL REFERENCES users(id),
   filled_by INT NOT NULL REFERENCES users(id),       -- patient or caregiver
   mo INT NOT NULL, sc INT NOT NULL, ua INT NOT NULL, pd INT NOT NULL, ad INT NOT NULL,
-  eq_vas INT,                -- 0-100, optional (the EQ-VAS page was removed; older records keep it)
+  eq_vas INT NOT NULL,
   pain INT NOT NULL,
   index_value REAL NOT NULL,
   submitted_at TIMESTAMPTZ NOT NULL DEFAULT now()
@@ -79,7 +79,6 @@ ALTER TABLE care_links ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ NOT NULL 
 ALTER TABLE notifications ADD COLUMN IF NOT EXISTS link_id INT;
 ALTER TABLE notifications ADD COLUMN IF NOT EXISTS provider_ref TEXT;   -- Twilio message SID
 ALTER TABLE referrals ADD COLUMN IF NOT EXISTS surgery_date DATE;
-ALTER TABLE surveys ALTER COLUMN eq_vas DROP NOT NULL;
 ALTER TABLE surveys ADD COLUMN IF NOT EXISTS flagged BOOLEAN NOT NULL DEFAULT false;
 ALTER TABLE surveys ADD COLUMN IF NOT EXISTS flag_reason TEXT;
 CREATE TABLE IF NOT EXISTS chat_messages (           -- the patient's "Ask" conversation

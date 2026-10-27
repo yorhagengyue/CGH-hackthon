@@ -11,6 +11,7 @@ type Q = (sql: string, params?: unknown[]) => Promise<Record<string, unknown>[]>
 export function flagReason(cur: Survey, prev: Survey | null): string | null {
   const reasons: string[] = [];
   if (cur.pain >= 7) reasons.push(`severe pain (${cur.pain}/10)`);
+  if (cur.eq_vas <= 40) reasons.push(`very low self-rated health (${cur.eq_vas}/100)`);
   for (const d of DIMS as readonly Dim[]) if (cur[d] >= 4) reasons.push(`${DIM_LABEL[d].toLowerCase()}: ${LEVEL_LABEL[cur[d]].toLowerCase()}`);
   if (prev && verdict(cur, prev) === "worse") reasons.push("worse than last visit");
   return reasons.length ? reasons.join(", ") : null;

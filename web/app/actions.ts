@@ -63,7 +63,7 @@ export async function submitSurveyAction(_: unknown, fd: FormData) {
   if (s.user.role === "caregiver" && !(await linkAccepted(s.user.id, patientId))) return { error: "Your parent has not allowed you to help yet." };
   const lv = {} as Record<Dim, number>;
   for (const d of ["mo", "sc", "ua", "pd", "ad"] as Dim[]) { lv[d] = Number(fd.get(d)); if (!(lv[d] >= 1 && lv[d] <= 5)) return { error: "Please answer every question." }; }
-  const vasRaw = fd.get("eq_vas"); const vas = vasRaw != null && vasRaw !== "" && !isNaN(Number(vasRaw)) ? Number(vasRaw) : null; const pain = Number(fd.get("pain"));
+  const vas = Number(fd.get("eq_vas")), pain = Number(fd.get("pain"));
   if (!(pain >= 0 && pain <= 10)) return { error: "Please rate your pain." };
   const apptId = Number(fd.get("appt")) || null;
   const q = await db();

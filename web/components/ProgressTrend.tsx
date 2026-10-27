@@ -1,8 +1,8 @@
 "use client";
 import { useEffect, useMemo, useRef, useState } from "react";
 
-export type SurveyPoint = { id: number; date: string; label: string; mo: number; sc: number; ua: number; pd: number; ad: number; pain: number; health: number; vas?: number | null; filled_by: string };
-type Series = "pain" | "health" | "dims" | "vas";
+export type SurveyPoint = { id: number; date: string; label: string; mo: number; sc: number; ua: number; pd: number; ad: number; pain: number; health: number; filled_by: string };
+type Series = "pain" | "health" | "dims";
 type DimKey = "mo" | "sc" | "ua" | "pd" | "ad";
 const DIM: { key: DimKey; name: string; color: string }[] = [
   { key: "mo", name: "Walking", color: "#0070b8" }, { key: "sc", name: "Washing and dressing", color: "#28a8e0" }, { key: "ua", name: "Usual activities", color: "#7c3aed" },
@@ -12,14 +12,12 @@ const LEVEL = ["", "No problems", "Slight problems", "Moderate problems", "Sever
 const LEVEL_SHORT = ["", "None", "Slight", "Moderate", "Severe", "Extreme"];
 const EXPLAIN: Record<Series, string> = {
   pain: "Each time you answered, you rated your pain from 0 (no pain) to 10 (the worst pain you can imagine). Lower is better.",
-  health: "Your overall health score is worked out from your five answers (walking, washing and dressing, usual activities, pain or discomfort, mood). 100 means no problems in any of them. Higher is better.",
-  vas: "In older questionnaires you also rated your overall health yourself from 0 (worst) to 100 (best). This page is no longer asked.",
+  health: "Each time you answered, you rated your overall health from 0 (worst) to 100 (best). Higher is better.",
   dims: "For each of the five questions you chose from 'no problems' to 'unable / extreme'. Lower on the chart is better. Tap a question in the list to look at it on its own.",
 };
 
-export function ProgressTrend({ points: allPoints, clinical = false }: { points: SurveyPoint[]; clinical?: boolean }) {
+export function ProgressTrend({ points, clinical = false }: { points: SurveyPoint[]; clinical?: boolean }) {
   const [series, setSeries] = useState<Series>("health");
-  const points = series === "vas" ? allPoints.filter((p) => p.vas != null) : allPoints;
   const [focus, setFocus] = useState<DimKey | null>(null);
   const [hover, setHover] = useState<number | null>(null);
   const box = useRef<HTMLDivElement>(null);
@@ -28,20 +26,19 @@ export function ProgressTrend({ points: allPoints, clinical = false }: { points:
   useEffect(() => { setHover(null); }, [series, focus]);
 
   const H = W < 640 ? 240 : 280, pl = series === "dims" ? (clinical ? 92 : 72) : 48, pr = 16, pt = 44, pb = 34;
-  const yTitle = series === "pain" ? "Pain, 0–10" : series === "health" ? "Overall health score, 0–100" : series === "vas" ? "Self-rated health, 0–100" : "Level, 1 = no problems";
+  const yTitle = series === "pain" ? "Pain, 0–10" : series === "health" ? "Overall health, 0–100" : "Level, 1 = no problems";
   const showX = (i: number) => points.length < 4 || W >= 640 || i === points.length - 1 || (points.length - 1 - i) % 2 === 0;
-  const max = series === "pain" ? 10 : series === "dims" ? 5 : 100, min = series === "dims" ? 1 : 0;
-  const ticks = series === "pain" ? [0, 2, 4, 6, 8, 10] : series === "dims" ? [1, 2, 3, 4, 5] : [0, 25, 50, 75, 100];
+  const max = series === "pain" ? 10 : series === "health" ? 100 : 5, min = series === "dims" ? 1 : 0;
+  const ticks = series === "pain" ? [0, 2, 4, 6, 8, 10] : series === "health" ? [0, 25, 50, 75, 100] : [1, 2, 3, 4, 5];
   const xs = (i: number) => points.length === 1 ? (pl + W - pr) / 2 : pl + (i * (W - pl - pr)) / (points.length - 1);
-  const upIsBetter = series === "health" || series === "vas";   // scores: high = good. pain / five questions: low = good, so the axis is flipped
+  const upIsBetter = series === "health";          // health: high = good. pain / five questions: low = good, so the axis is flipped
   const ys = (y: number) => upIsBetter ? pt + (1 - (y - min) / (max - min)) * (H - pt - pb) : pt + ((y - min) / (max - min)) * (H - pt - pb);
   const worst = upIsBetter ? min : max;             // the axis value at the bottom of the chart
   const lines = useMemo(() => series === "pain" ? [{ key: "pain" as const, name: "Pain", color: "#b91c1c", vals: points.map((p) => p.pain) }]
-    : series === "health" ? [{ key: "health" as const, name: "Overall health score", color: "#0070b8", vals: points.map((p) => p.health) }]
-    : series === "vas" ? [{ key: "vas" as const, name: "Self-rated health", color: "#7c3aed", vals: points.filter((p) => p.vas != null).map((p) => p.vas as number) }]
+    : series === "health" ? [{ key: "health" as const, name: "Overall health", color: "#0070b8", vals: points.map((p) => p.health) }]
     : DIM.map((d) => ({ key: d.key, name: d.name, color: d.color, vals: points.map((p) => p[d.key]) })), [series, points]);
   const main = lines.length === 1 ? lines[0] : lines.find((l) => l.key === focus) ?? null; // the line that gets labels + area
-  const lowerBetter = series !== "health" && series !== "vas";
+  const lowerBetter = series !== "health";
   const first = main?.vals[0], last = main?.vals.at(-1);
   const delta = main && first !== undefined && last !== undefined && points.length > 1 ? last - first : null;
   const trendWord = delta == null ? "" : delta === 0 ? "No change" : (lowerBetter ? delta < 0 : delta > 0) ? "Better" : "Worse";
@@ -53,7 +50,7 @@ export function ProgressTrend({ points: allPoints, clinical = false }: { points:
   const onMove = (e: React.PointerEvent<SVGSVGElement>) => { if (!points.length) return; const r = e.currentTarget.getBoundingClientRect(); const x = e.clientX - r.left; let best = 0; for (let i = 1; i < points.length; i++) if (Math.abs(xs(i) - x) < Math.abs(xs(best) - x)) best = i; setHover(best); };
 
   return <div className="bg-white rounded-2xl shadow-card p-5">
-    <div className="flex flex-wrap items-center gap-2">{tab("health", "Overall health score (0–100)")}{tab("dims", "The five questions (1–5)")}{tab("pain", "Pain (0–10)")}{clinical && allPoints.some((p) => p.vas != null) && tab("vas", "EQ-VAS (older records)")}
+    <div className="flex flex-wrap items-center gap-2">{tab("health", "Overall health (0–100)")}{tab("dims", "The five questions (1–5)")}{tab("pain", "Pain (0–10)")}
       <details className="ml-auto text-sm"><summary className="cursor-pointer text-cgh-blue font-bold list-none">What is this?</summary><p className="text-slate-600 mt-1 max-w-sm">{EXPLAIN[series]}</p></details></div>
     {main && delta != null && <div className="mt-3 flex items-center gap-2 text-sm"><span className={`px-2.5 py-1 rounded-full font-bold ${trendWord === "Better" ? "bg-ok-bg text-ok" : trendWord === "Worse" ? "bg-warn-bg text-warn" : "bg-slate-100 text-slate-600"}`}>{trendWord}</span><span className="text-slate-600">{main.name}: {series === "dims" ? `${LEVEL[first!]} → ${LEVEL[last!]}` : `${first} → ${last}`} since {points[0].label}</span></div>}
     <div ref={box} className="w-full relative">{points.length === 0 ? <p className="text-slate-500 mt-4">Your first questionnaire will appear here.</p> : <>
@@ -77,7 +74,7 @@ export function ProgressTrend({ points: allPoints, clinical = false }: { points:
         {!main && lines.length > 1 && <div className="text-slate-300 mt-0.5">Tap a question below to see it alone</div>}
       </div>}
     </>}</div>
-    {points.length > 0 && <div className="text-[11px] text-slate-500 mt-1">{series === "pain" ? "top = no pain · bottom = worst pain" : series === "dims" ? "top = no problems · bottom = unable / extreme" : series === "health" ? "from your five answers · top = no problems at all" : "top = best health · bottom = worst health"} · higher on the chart is always better</div>}
+    {points.length > 0 && <div className="text-[11px] text-slate-500 mt-1">{series === "pain" ? "top = no pain · bottom = worst pain" : series === "dims" ? "top = no problems · bottom = unable / extreme" : "top = best health · bottom = worst health"} · higher on the chart is always better</div>}
     {lines.length > 1 && <div className="flex flex-wrap gap-2 mt-3">{lines.map((l) => <button type="button" key={l.key} onClick={() => setFocus(focus === l.key ? null : (l.key as DimKey))} className={`inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 rounded-full border transition ${focus === l.key ? "border-transparent text-white" : "border-slate-200 text-slate-700 bg-white"}`} style={focus === l.key ? { background: l.color } : undefined}><i className="w-2.5 h-2.5 rounded-full" style={{ background: focus === l.key ? "#fff" : l.color }} />{l.name}</button>)}{focus && <button type="button" onClick={() => setFocus(null)} className="text-xs text-cgh-blue font-bold px-2">Show all</button>}</div>}
     <style>{`.trend-draw{stroke-dasharray:1;stroke-dashoffset:1;animation:trend-draw .8s ease-out forwards}@keyframes trend-draw{to{stroke-dashoffset:0}}@media (prefers-reduced-motion:reduce){.trend-draw{animation:none;stroke-dashoffset:0}}`}</style>
   </div>;

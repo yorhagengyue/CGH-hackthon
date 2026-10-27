@@ -9,7 +9,7 @@ const LEVEL = ["", "No problems", "Slight problems", "Moderate problems", "Sever
 const cmp = (cur: number, prev: number | undefined, lowerBetter = true) => prev === undefined ? "" : cur === prev ? "same" : (lowerBetter ? cur < prev : cur > prev) ? "better" : "worse";
 const Mark = ({ v }: { v: string }) => v ? <span className={`text-xs font-bold ${v === "better" ? "text-ok" : v === "worse" ? "text-danger" : "text-slate-400"}`}>{v}</span> : null;
 
-/** Evolt-style record browser: a date strip with arrows, then the six answers of the selected questionnaire. */
+/** Evolt-style record browser: a date strip with arrows, then the seven answers of the selected questionnaire. */
 export function RecordsBrowser({ points }: { points: SurveyPoint[] }) {
   const [i, setI] = useState(Math.max(0, points.length - 1));
   if (!points.length) return null;
@@ -29,6 +29,7 @@ export function RecordsBrowser({ points }: { points: SurveyPoint[] }) {
         <div className="font-semibold text-cgh-ink">{LEVEL[p[r.key]]}</div>
       </div>)}
       <div className="py-2.5 flex items-center justify-between"><span className="font-semibold text-cgh-ink whitespace-nowrap">Pain <span className="text-slate-400 font-normal">·</span> {p.pain} out of 10</span><Mark v={cmp(p.pain, prev?.pain)} /></div>
+      <div className="py-2.5 flex items-center justify-between"><span className="font-semibold text-cgh-ink whitespace-nowrap">Health today <span className="text-slate-400 font-normal">·</span> {p.health} out of 100</span><Mark v={cmp(p.health, prev?.health, false)} /></div>
     </div>
   </div>;
 }

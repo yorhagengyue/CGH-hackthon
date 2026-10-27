@@ -41,7 +41,7 @@ function Bar({ value, max, prev, label }: { value: number; max: number; prev: nu
   </div>;
 }
 
-/** Everything below the first screen: five rows with dots, pain bar, overall score bar, visit strip, previous answers. */
+/** Everything below the first screen: five rows with dots, pain and health bars, visit strip, previous answers. */
 export function AnswersDetail({ surveys, caregiver = false }: { surveys: Survey[]; caregiver?: boolean }) {
   const cur = surveys.at(-1) ?? null, prev = surveys.at(-2) ?? null;
   if (!cur) return null;
@@ -57,8 +57,8 @@ export function AnswersDetail({ surveys, caregiver = false }: { surveys: Survey[
         <div className="grid grid-cols-10 gap-1 mt-2">{Array.from({ length: 10 }, (_, i) => <div key={i} className={`h-3 rounded ${i < cur.pain ? (cur.pain >= 7 ? "bg-danger" : cur.pain >= 4 ? "bg-warn" : "bg-ok") : "bg-slate-200"}`} />)}</div>
       </div>
       <div className="pt-4 mt-3 border-t border-slate-100">
-        <div className="font-semibold">Overall health score <span className="text-cgh-ink font-extrabold">{Math.round(cur.index_value * 100)} out of 100</span> <span className="text-xs text-slate-500 font-normal">from your five answers</span></div>
-        <Bar value={Math.round(cur.index_value * 100)} max={100} prev={prev ? Math.round(prev.index_value * 100) : null} label="overall health score" />
+        <div className="font-semibold">You rated your health <span className="text-cgh-ink font-extrabold">{cur.eq_vas} out of 100</span></div>
+        <Bar value={cur.eq_vas} max={100} prev={prev?.eq_vas ?? null} label="health rating" />
         <div className="h-4" />
       </div>
     </Card>
@@ -78,7 +78,7 @@ export async function PlainProgress({ patientId }: { patientId: number; caregive
   const cur = surveys.at(-1) ?? null, prev = surveys.at(-2) ?? null;
   if (!cur) return <div className="max-w-xl"><h1 className="text-[30px]">No questionnaire yet</h1><p className="text-slate-600 mt-2">After your first questionnaire, this page shows your trend and your records.</p></div>;
   const v = verdict(cur, prev); const t = VERDICT_TEXT[v];
-  const points = surveys.map((s) => ({ id: s.id, date: fmtD(s.submitted_at), label: dLabel(s.submitted_at), mo: s.mo, sc: s.sc, ua: s.ua, pd: s.pd, ad: s.ad, pain: s.pain, health: Math.round(s.index_value * 100), filled_by: s.filled_by_name }));
+  const points = surveys.map((s) => ({ id: s.id, date: fmtD(s.submitted_at), label: dLabel(s.submitted_at), mo: s.mo, sc: s.sc, ua: s.ua, pd: s.pd, ad: s.ad, pain: s.pain, health: s.eq_vas, filled_by: s.filled_by_name }));
   return <div className="max-w-3xl space-y-5">
     <h1 className={`text-[32px] ${t.tone === "ok" ? "text-ok" : t.tone === "warn" ? "text-warn" : "text-cgh-ink"}`}>{t.title}</h1>
     <section><h2 className="text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500 mb-2">Trend</h2><ProgressTrend points={points} /></section>
