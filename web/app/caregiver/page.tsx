@@ -18,11 +18,11 @@ export default async function Caregiver() {
   return <div className="max-w-3xl mx-auto"><h1 className="text-2xl font-bold mb-4">My parents</h1>
     <div className="grid md:grid-cols-2 gap-4">
       {parents.map((p) => <Card key={p.id} title={p.name} right={`your ${p.relationship}`}>
-        <div className="text-sm text-gray-600">Next appointment: {p.next_at ? fmtDT(p.next_at) : "none"}</div>
-        <div className="text-sm text-gray-600 mt-1">{p.n_surveys} questionnaires on record</div>
+        <div className="text-sm text-slate-600">Next appointment: {p.next_at ? fmtDT(p.next_at) : "none"}</div>
+        <div className="text-sm text-slate-600 mt-1">{p.n_surveys} questionnaires on record</div>
         <div className="mt-3 flex gap-2 items-center">
-          <form action={actAsAction}><input type="hidden" name="patient_id" value={p.id} /><button className="px-3 py-1.5 rounded-lg border border-gray-300 bg-white text-sm">Open {p.name.split(" ")[0]}'s page</button></form>
-          {p.next_id && (p.next_done ? <Pill ok>questionnaire done</Pill> : <form action={actAsAction}><input type="hidden" name="patient_id" value={p.id} /><input type="hidden" name="appt" value={p.next_id} /><button className="px-3 py-1.5 rounded-lg bg-teal-700 text-white text-sm font-semibold">Fill questionnaire for {p.name.split(" ")[0]}</button></form>)}
+          <form action={actAsAction}><input type="hidden" name="patient_id" value={p.id} /><button className="px-3 py-1.5 rounded-lg border border-slate-300 bg-white text-sm">Open {p.name.split(" ")[0]}'s page</button></form>
+          {p.next_id && (p.next_done ? <Pill ok>questionnaire done</Pill> : <form action={actAsAction}><input type="hidden" name="patient_id" value={p.id} /><input type="hidden" name="appt" value={p.next_id} /><button className="px-3 py-1.5 rounded-lg bg-cgh-blue text-white text-sm font-semibold">Fill questionnaire for {p.name.split(" ")[0]}</button></form>)}
         </div>
       </Card>)}
       <Card title="Link another parent"><ActionForm action={linkParentAction} submit="Link"><Field label="Parent's NRIC"><input name="parent_nric" className={inputCls} placeholder="S1234567A" required /></Field><Field label="Relationship"><select name="relationship" className={inputCls}><option>son</option><option>daughter</option><option>spouse</option><option>grandchild</option><option>caregiver</option></select></Field></ActionForm></Card>

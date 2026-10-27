@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { session } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { clinicList, levels } from "@/lib/data";
-import { Arrow, Card, Pill, ProfileBadge, age, fmtD, fmtDT } from "@/components/ui";
+import { Arrow, Card, Pill, ProfileBadge, age, fmtD, fmtDT, fmtT } from "@/components/ui";
 
 export default async function Physio({ searchParams }: { searchParams: Promise<{ day?: string }> }) {
   const s = await session(); if (!s || s.user.role !== "physio") redirect("/login");
@@ -18,26 +18,26 @@ export default async function Physio({ searchParams }: { searchParams: Promise<{
   const notes = await q<{ message: string; send_at: string }>(`SELECT message, send_at::text FROM notifications WHERE user_id = $1 AND channel='app' ORDER BY send_at DESC LIMIT 5`, [s.user.id]);
   const nSub = list.filter((r) => r.cur).length;
   return <div className="space-y-4">
-    <Card title={`Clinic list · ${fmtD(date)}`} right={<span className="flex items-center gap-2">{nSub}/{list.length} questionnaires in before visit <form className="inline"><input type="date" name="day" defaultValue={date.toLocaleDateString("en-CA", { timeZone: "Asia/Singapore" })} className="border border-gray-300 rounded px-1 text-xs" /></form></span>}>
-      <table className="w-full text-sm"><thead><tr className="text-xs text-gray-500 text-left"><th className="py-1">Time</th><th>Status</th><th>Patient</th><th>Age · Sex</th><th>Region / diagnosis</th><th>Pain</th><th>EQ-5D-5L</th><th>Index</th><th>EQ-VAS</th><th>Previous</th></tr></thead><tbody>
-        {list.map((r) => <tr key={r.appt_id} className="border-t border-gray-100 hover:bg-gray-50"><td className="py-1.5">{new Date(r.scheduled_at).toLocaleTimeString("en-SG", { hour: "numeric", minute: "2-digit", timeZone: "Asia/Singapore" })}</td>
-          <td>{r.cur ? <><Pill ok>Submitted</Pill><div className="text-xs text-gray-500">{fmtDT(r.cur.submitted_at)}</div></> : <Pill ok={false}>Not submitted</Pill>}</td>
-          <td><a href={`/patients/${r.patient_id}`} className="font-semibold text-teal-800 hover:underline">{r.name}</a><div className="text-xs text-gray-500">{r.kind} · {r.nPrev} prior</div></td>
-          <td>{age(r.birthday) ?? "-"} · {(r.gender ?? "-")[0]}</td><td>{r.region}<div className="text-xs text-gray-500 max-w-[220px] truncate">{r.diagnosis}</div></td>
-          <td>{r.cur ? <><b>{r.cur.pain}</b>/10 <Arrow f={r.flags.pain} /></> : "—"}</td><td>{r.cur ? <ProfileBadge s={levels(r.cur)} /> : "—"}</td>
-          <td>{r.cur ? <><b>{r.cur.index_value.toFixed(3)}</b> <Arrow f={r.flags.index} /></> : "—"}</td><td>{r.cur ? <><b>{r.cur.eq_vas}</b> <Arrow f={r.flags.vas} /></> : "—"}</td>
-          <td>{r.prev ? <><ProfileBadge s={levels(r.prev)} /> {r.prev.index_value.toFixed(2)} · {r.prev.eq_vas} · {r.prev.pain}/10<div className="text-xs text-gray-500">{fmtD(r.prev.submitted_at)}</div></> : <span className="text-gray-400">first visit</span>}</td></tr>)}
-        {list.length === 0 && <tr><td colSpan={10} className="py-3 text-gray-400">No appointments on this day.</td></tr>}
+    <Card tight title={`Clinic list · ${fmtD(date)}`} right={<span className="flex items-center gap-2">{nSub}/{list.length} questionnaires in before visit <form className="inline"><input type="date" name="day" defaultValue={date.toLocaleDateString("en-CA", { timeZone: "Asia/Singapore" })} className="border border-slate-300 rounded px-1 text-xs" /></form></span>}>
+      <table className="tbl"><thead><tr><th>Time</th><th>Status</th><th>Patient</th><th>Age · Sex</th><th>Region / diagnosis</th><th className="num">Pain</th><th>EQ-5D-5L</th><th className="num">Index</th><th className="num">EQ-VAS</th><th>Previous</th></tr></thead><tbody>
+        {list.map((r) => <tr key={r.appt_id} ><td className="font-bold tabular-nums whitespace-nowrap">{fmtT(r.scheduled_at)}</td>
+          <td>{r.cur ? <><Pill ok>Submitted</Pill><div className="text-xs text-slate-500">{fmtDT(r.cur.submitted_at)}</div></> : <Pill ok={false}>Not submitted</Pill>}</td>
+          <td><a href={`/patients/${r.patient_id}`} className="font-semibold text-cgh-blue hover:underline">{r.name}</a><div className="text-xs text-slate-500">{r.kind} · {r.nPrev} prior</div></td>
+          <td>{age(r.birthday) ?? "-"} · {(r.gender ?? "-")[0]}</td><td>{r.region}<div className="text-xs text-slate-500 max-w-[220px] truncate">{r.diagnosis}</div></td>
+          <td className="num">{r.cur ? <><b>{r.cur.pain}</b><span className="text-slate-400">/10</span> <Arrow f={r.flags.pain} /></> : <span className="text-slate-300">—</span>}</td><td>{r.cur ? <ProfileBadge s={levels(r.cur)} /> : <span className="text-slate-300">—</span>}</td>
+          <td className="num">{r.cur ? <><b>{r.cur.index_value.toFixed(3)}</b> <Arrow f={r.flags.index} /></> : <span className="text-slate-300">—</span>}</td><td className="num">{r.cur ? <><b>{r.cur.eq_vas}</b> <Arrow f={r.flags.vas} /></> : <span className="text-slate-300">—</span>}</td>
+          <td>{r.prev ? <><ProfileBadge s={levels(r.prev)} /> {r.prev.index_value.toFixed(2)} · {r.prev.eq_vas} · {r.prev.pain}/10<div className="text-xs text-slate-500">{fmtD(r.prev.submitted_at)}</div></> : <span className="text-slate-400">first visit</span>}</td></tr>)}
+        {list.length === 0 && <tr><td colSpan={10} className="py-3 text-slate-400">No appointments on this day.</td></tr>}
       </tbody></table>
-      <div className="text-xs text-gray-500 mt-2">▲▼ change ≥ MCID versus previous questionnaire · click a name for full history and the clinical-document note</div>
+      <div className="text-xs text-slate-500 mt-2 px-4 pb-2">▲▼ change ≥ MCID versus previous questionnaire · click a name for full history and the clinical-document note</div>
     </Card>
     <div className="grid lg:grid-cols-[1fr_320px] gap-4">
       <Card title="My patients" right={`${mine.length} active referrals`}>
-        <table className="w-full text-sm"><thead><tr className="text-xs text-gray-500 text-left"><th className="py-1">Patient</th><th>Diagnosis</th><th>PROMs</th><th>Last PROM</th><th>Next appointment</th></tr></thead><tbody>
-          {mine.map((p) => <tr key={p.id} className="border-t border-gray-100 hover:bg-gray-50"><td className="py-1.5"><a href={`/patients/${p.id}`} className="font-semibold text-teal-800 hover:underline">{p.name}</a></td><td>{p.diagnosis}<div className="text-xs text-gray-500">{p.region}</div></td><td>{p.n}</td><td className="text-gray-500">{fmtD(p.last)}</td><td>{p.next ? fmtDT(p.next) : <span className="text-amber-700">none scheduled</span>}</td></tr>)}
+        <table className="tbl"><thead><tr><th>Patient</th><th>Diagnosis</th><th className="num">PROMs</th><th>Last PROM</th><th>Next appointment</th></tr></thead><tbody>
+          {mine.map((p) => <tr key={p.id} ><td><a href={`/patients/${p.id}`} className="font-semibold text-cgh-blue hover:underline">{p.name}</a></td><td>{p.diagnosis}<div className="text-xs text-slate-500">{p.region}</div></td><td className="num">{p.n}</td><td className="text-slate-500">{fmtD(p.last)}</td><td>{p.next ? fmtDT(p.next) : <span className="text-warn">none scheduled</span>}</td></tr>)}
         </tbody></table>
       </Card>
-      <Card title="Notifications">{notes.map((n, i) => <div key={i} className="text-sm py-1.5 border-b border-gray-100 last:border-0"><span className="text-xs text-gray-400 mr-1">{fmtDT(n.send_at)}</span>{n.message}</div>)}{notes.length === 0 && <p className="text-gray-400 text-sm">None.</p>}</Card>
+      <Card title="Notifications">{notes.map((n, i) => <div key={i} className="text-sm py-1.5 border-b border-slate-100 last:border-0"><span className="text-xs text-slate-400 mr-1">{fmtDT(n.send_at)}</span>{n.message}</div>)}{notes.length === 0 && <p className="text-slate-400 text-sm">None.</p>}</Card>
     </div>
   </div>;
 }

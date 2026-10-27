@@ -1,3 +1,33 @@
 @import "tailwindcss";
 
-body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+@theme {
+  --color-cgh-blue: #0070b8;
+  --color-cgh-blue-dark: #005a94;
+  --color-cgh-sky: #28a8e0;
+  --color-cgh-mist: #e8f0f8;
+  --color-cgh-ink: #14263a;
+  --color-ok: #15803d;
+  --color-ok-bg: #e6f4ea;
+  --color-warn: #b45309;
+  --color-warn-bg: #fff4d6;
+  --color-danger: #b91c1c;
+  --color-danger-bg: #fdecea;
+  --font-sans: var(--font-manrope), ui-sans-serif, system-ui, sans-serif;
+  --shadow-card: 0 1px 2px rgb(20 38 58 / 0.04), 0 4px 16px rgb(20 38 58 / 0.06);
+}
+
+html { font-feature-settings: "tnum" 1, "cv11" 1; }
+body { background: #f4f7fb; color: var(--color-cgh-ink); }
+h1 { font-weight: 800; letter-spacing: -0.02em; }
+
+/* data tables */
+.tbl { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 0.875rem; }
+.tbl thead th { position: sticky; top: 0; background: #f8fafc; color: #64748b; font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 700; text-align: left; padding: 8px 10px; border-bottom: 1px solid #e2e8f0; z-index: 1; }
+.tbl tbody td { padding: 9px 10px; border-bottom: 1px solid #eef2f7; vertical-align: middle; }
+.tbl tbody tr:nth-child(even) td { background: #fafcfe; }
+.tbl tbody tr:hover td { background: var(--color-cgh-mist); }
+.tbl .num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.tbl thead th.num { text-align: right; }
+
+/* level colour scale: 1 none -> 5 extreme (kept green -> red) */
+.lv1 { background: #d1fae5; color: #065f46; } .lv2 { background: #ecfccb; color: #3f6212; } .lv3 { background: #fef3c7; color: #92400e; } .lv4 { background: #fed7aa; color: #9a3412; } .lv5 { background: #fecaca; color: #991b1b; }
