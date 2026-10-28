@@ -28,6 +28,7 @@ const scenes = {
     await pause(2500);   // do not submit: the demo data stays clean
   },
   "11-referral": async (page) => { await login(page, "D001"); await page.goto(`${BASE}/doctor`); await pause(2500); await page.locator('input[name="diagnosis"]').fill("Osteoarthritis of knee").catch(() => {}); await pause(3000); },
+  "15-sms": async (page) => { await login(page, "H001"); await pause(1500); await page.goto(`${BASE}/sms`, { waitUntil: "networkidle" }); console.log("sms url:", page.url()); await pause(3500); await page.mouse.wheel(0, 200); await pause(2500); },
   "12-hod": async (page) => { await login(page, "H001"); await page.goto(`${BASE}/hod`); await pause(3500); await page.mouse.wheel(0, 400); await pause(3000); },
 };
 

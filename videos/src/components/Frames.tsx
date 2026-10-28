@@ -37,6 +37,19 @@ export const Media: React.FC<{ scene: Scene; width: number; height: number; star
         const o = interpolate(f, [a, a + 8, a + d, a + d + 10], [0, 1, 1, 0], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
         return <div key={"h" + i} style={{ position: "absolute", left: h.x * width, top: h.y * height, width: h.w * width, height: h.h * height, border: `3px solid ${C.sky}`, borderRadius: 14, boxShadow: `0 0 0 4px rgba(40,168,224,0.18)`, opacity: o, pointerEvents: "none" }} />;
       })}
+      {(scene.zooms ?? []).map((z, i) => {
+        const a = z.at * fps, d = (z.for ?? 3) * fps, k = 1.5;
+        const o = interpolate(f, [a, a + 8, a + d, a + d + 8], [0, 1, 1, 0], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
+        if (o <= 0) return null;
+        const bw = z.w * width * k, bh = z.h * height * k;
+        const cx = (z.x + z.w / 2) * width, cy = (z.y + z.h / 2) * height;
+        const left = Math.max(-40, Math.min(width - bw + 40, cx - bw / 2)), top = Math.max(0, Math.min(height - bh, cy - bh / 2));
+        return (
+          <div key={"z" + i} style={{ position: "absolute", left, top, width: bw, height: bh, borderRadius: 18, overflow: "hidden", border: `1px solid ${C.blue}`, boxShadow: "0 18px 50px rgba(20,38,58,0.28)", opacity: o, background: C.canvas, pointerEvents: "none" }}>
+            <div style={{ position: "absolute", left: -z.x * width * k, top: -z.y * height * k, width: width * k, height: height * k }}>{inner}</div>
+          </div>
+        );
+      })}
       {(scene.ripples ?? []).map((r, i) => {
         const a = r.at * fps; const t = f - a;
         const sc = interpolate(t, [0, 18], [0.3, 1.6], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });

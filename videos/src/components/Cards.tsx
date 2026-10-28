@@ -79,7 +79,7 @@ export const Journey: React.FC<{ current: Role }> = ({ current }) => {
 export const Outro: React.FC<{ portrait?: boolean }> = ({ portrait }) => {
   const f = useCurrentFrame();
   const nums: [number, string, string][] = [[2, "min", "to answer"], [2, "reminders", "by SMS before the visit"], [0, "paper", "forms to transcribe"]];
-  const next = ["First-visit branch and \"Begin session\" on the day", "Visit record for the therapist", "Real SMS and APNs push", "Singapore EQ-5D-5L value set"];
+  const next = ["First-visit branch and \"Begin session\" on the day", "Visit record for the therapist", "Real SMS and APNs push", "Singapore EQ-5D-5L value set", "Family: parents add members themselves"];
   return (
     <AbsoluteFill style={{ background: C.surface, alignItems: "center", justifyContent: "center", gap: 48, fontFamily: font }}>
       <div style={{ display: "flex", flexDirection: portrait ? "column" : "row", gap: portrait ? 36 : 120 }}>

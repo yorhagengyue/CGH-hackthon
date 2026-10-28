@@ -29,14 +29,14 @@ export const RoleCard: React.FC<{ role: Role; title: string; icon: IconName; siz
 };
 
 /// Two-layer caption: bold "what" fades in as a whole, the "why" appears word by word (40 ms apart).
-export const Caption: React.FC<{ what: string; why: string; small?: boolean; startFrame?: number }> = ({ what, why, small, startFrame = 0 }) => {
+export const Caption: React.FC<{ what: string; why: string; small?: boolean; column?: boolean; startFrame?: number }> = ({ what, why, small, column, startFrame = 0 }) => {
   const f = useCurrentFrame() - startFrame;
   const o = interpolate(f, [0, FADE], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
   const words = why.split(" ");
   return (
-    <div style={{ fontFamily, opacity: o, background: "rgba(20,38,58,0.86)", color: "#fff", padding: small ? "16px 22px" : "20px 28px", borderRadius: 14, borderLeft: `6px solid ${C.sky}`, width: "100%", boxSizing: "border-box" }}>
-      <div style={{ fontSize: small ? 34 : 42, fontWeight: 800, lineHeight: 1.25, letterSpacing: -0.3 }}>{what}</div>
-      <div style={{ fontSize: small ? 26 : 30, fontWeight: 500, lineHeight: 1.35, marginTop: 8, color: "rgba(255,255,255,0.88)" }}>
+    <div style={{ fontFamily, opacity: o, background: "rgba(20,38,58,0.86)", color: "#fff", padding: column ? "28px 30px" : small ? "16px 22px" : "20px 28px", borderRadius: 14, borderLeft: `6px solid ${C.sky}`, width: "100%", boxSizing: "border-box" }}>
+      <div style={{ fontSize: column ? 44 : small ? 34 : 42, fontWeight: 800, lineHeight: 1.22, letterSpacing: -0.3 }}>{what}</div>
+      <div style={{ fontSize: column ? 30 : small ? 26 : 30, fontWeight: 500, lineHeight: 1.4, marginTop: column ? 16 : 8, color: "rgba(255,255,255,0.88)" }}>
         {words.map((w, i) => {
           const wo = interpolate(f, [FADE + i * 1.2, FADE + i * 1.2 + 6], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
           return <span key={i} style={{ opacity: wo }}>{w} </span>;
